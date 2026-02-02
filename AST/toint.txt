@@ -1,0 +1,6 @@
+float x = 12.2;
+read(x);
+print(x.typeint());
+var z = x.typeint();
+print(x);
+read(x).typeint();

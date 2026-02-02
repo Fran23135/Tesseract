@@ -1,0 +1,34 @@
+var x;
+x = "D";
+
+var arr = [1,2,3];
+int asd[3] = [1,2];
+asd = [3,4];
+var xada = (2,);
+var tps = (2*5)/2;
+var pp = 33 % 2;
+print(3+3+3);
+
+int tp = 5;
+function varlen(y){
+  return 54;
+}
+var pts = varlen(5);
+var arrd = 2+2+2*(5+5-2+2+2);
+print(3+5);
+var ad = [2==2,3<1,3];
+/*for(var i in asd){
+  print(i);
+  }*/
+var f = [1,2,3,{"val":1, "std":6,"sad":0}, ("sad",2,7,True)];
+//f = [0,1,2,3];
+//x = f[3:1];
+var rs = (1,2,(2,));
+var s= (1,);
+var dict = {"val":(1,2), "std":6,"sad":0 };
+var resultado = 2 > 5 ? "Es mayor" : "No es mayor";
+while(tp>5){
+   print(tp);
+}
+
+

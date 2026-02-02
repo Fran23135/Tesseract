@@ -1,0 +1,148 @@
+// 1. Declaración de Variables y Tipos Básicos
+// -------------------------------------------
+// Declaración implícita (inferencia de tipo)
+var x = 10;
+var y = 20.5;
+var text = "Hola Mundo";
+var isAlive = True;
+
+// Declaración explícita (tipado estático)
+int num = 50;
+float decimal = 99.99;
+string saludo = "Test";
+bool status = False;
+void nada; // Variable declarada como NULL
+
+// Excepción semántica específica detectada en tu código C (reassign_var):
+// Permitir asignar int a variable declarada float (casting automático)
+float conversionTest = 10.5;
+conversionTest = 20; // Internamente se convierte a "20.00"
+
+// 2. Estructuras de Datos (Arrays, Tuplas, Diccionarios)
+// ------------------------------------------------------
+// Arrays Dinámicos Implícitos
+var lista = [1, 2, 3, 4, 5];
+var mixta = [1, "texto", True]; // MArr (Mixed Array)
+
+// Arrays con Tipado Explícito y Tamaño
+int numeros[5]; // Array de enteros vacío de tamaño 5
+float precios[3] = [1.5, 2.5, 3.5];
+//string nombres[] = ["Ana", "Juan"]; // Tamaño inferido
+
+// Tuplas (Inmutables)
+var punto = (10, 20);
+var single = (5,); // Tupla de un elemento
+
+// Diccionarios
+var dict = {
+    "nombre": "Lenguaje",
+    "version": 1
+};
+
+// 3. Operaciones y Expresiones
+// ----------------------------
+// Aritmética
+var suma = x + num;
+//var resta = y - 5.0;
+var mult = 10 * 10;
+var div = 100 / 2;
+var modulo = 10 % 3; // Solo entre enteros
+
+// Operadores Unarios (Incremento/Decremento)
+num++; // Post-incremento
+++x;   // Pre-incremento
+num--;
+--x;
+
+// Concatenación de Strings
+var mensaje = "Hola " . "usuario";
+
+// 4. Acceso a Datos y Slicing (Rangos)
+// ------------------------------------
+// Acceso simple
+var val = lista[0];
+var keyVal = dict["nombre"];
+
+// Acceso profundo (Deep Access) y Slicing
+// Tu gramática soporta rangos ".." y semiobiertos "..<"
+var sublista = lista[1..3]; 
+var sublista2 = lista[0..<2];
+
+// Interpolación de Strings (Token STRING_WITH_VARS)
+// Soporta variables y acceso a arrays dentro de #(...)
+print("El valor de x es: #(x)");
+//print("El primer elemento es: #(lista[0])");
+
+// 5. Funciones (Variantes)
+// ------------------------
+// Función con tipo de retorno inferido (keyword 'function')
+function sumar(int a, int b) {
+    return a + b;
+}
+
+// Función con alias 'func' y retorno void (sin return)
+/*func imprimirAlgo(string s) {
+    print(s);
+}*/
+
+// Función con tipo explícito
+/*int function multiplicar(int a, int b) {
+    return a * b;
+}*/
+
+// Llamadas a funciones
+//var resultado = sumar(10, 5);
+//imprimirAlgo("Ejecutando funcion void");
+
+// 6. Estructuras de Control (Estilo Bloque {})
+// -------------------------------------------
+// IF - ELSE IF - ELSE
+if (x > 5) {
+    print("X es mayor");
+} else if (x == 5) {
+    print("X es igual");
+} else {
+    print("X es menor");
+}
+
+// Operador Ternario (Expression ? TrueVal : FalseVal)
+var ternario = (x > 0) ? "Positivo" : "Negativo";
+
+// WHILE
+while (x > 0) {
+    print(x);
+    x--;
+}
+
+// PERFORM - WHILE (Do-While)
+perform {
+    print("Ejecutando al menos una vez");
+} while (x==22)
+
+// FOR LOOP (Iterador)
+for (var i in 0..4) {
+    print(i);
+}
+
+// FOR LOOP (Rango)
+for (var j in 0..10) {
+    print(j);
+}
+
+// SWITCH (Usa colon interno para casos, pero bloque externo con llaves)
+switch (x) {
+    case 1: 
+        print("Uno");
+    break;
+    case 10: 
+        print("Diez");
+    break;
+    default: 
+        print("Otro");
+    break;
+}
+
+// 7. Inputs
+// ---------
+read(x); // Lectura simple
+read(num).typeint(); // Lectura con conversión forzada a int

@@ -1,0 +1,7 @@
+* **Ciclos for**: Agregar soporte para ciclos for que no solo utilicen rangos, sino también otras formas de iteración.
+* **Rangos de tipo string y float**: Agregar soporte para rangos de tipo string y float, no solo para rangos de tipo int.
+* **Agregar elementos con rangos de números floats y string**: Agregar soporte para agregar elementos con rangos de números floats y string.
+* **Subarrays y acceso**: Agregar soporte para subarrays dentro de arrays y la sintaxis de acceso a ellos.
+* **Tuplas y diccionarios**: Agregar soporte para tuplas y diccionarios como tipos de datos.
+* **Diccionarios y tuplas en arrays**: Agregar soporte para incluir diccionarios y tuplas dentro de arrays.
+* **Rangos en arrays**: Agregar soporte para rangos en arrays, lo que permitiría acceder a subconjuntos de elementos en un array.

@@ -1,0 +1,382 @@
+{
+  "Program": [
+    {
+      "VariableDeclaration": {
+        "name": "op",
+        "value": {
+          "value": 0,
+          "type": "int",
+          "explicitType": "int"
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "m",
+        "value": {
+          "value": 0.0,
+          "type": "float",
+          "explicitType": "float"
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "lado",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "bs",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "al",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "are",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "pi",
+        "value": {
+          "value": 3.14,
+          "type": "float",
+          "explicitType": "float"
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "r",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "ra",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "nl",
+        "value": {
+          "value": 0.0,
+          "type": "float",
+          "explicitType": "float"
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "a",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "pen",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "p",
+        "value": {
+          "value": null
+        }
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "QUE AREA DESEA CALCULAR?"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "1.- Area de un cuadrado"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "2.- Area de un Circulo"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "3.- Area de un Triangulo"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "4.-Area de un Pentagono"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "Selecciona una opcion"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "read",
+        "arguments": {
+          "value": "op"
+        },
+        "paramType": "int"
+      }
+    },
+    {
+      "SwitchStatement": {
+        "value": "op"
+      }
+    },
+    {
+      "block": {
+        "value": "BlockStart",
+        "case": [
+          {
+            "case": "1",
+            "callExpression": [
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "Dame un numero\\n"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "read",
+                "arguments": {
+                  "value": "lado"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "\"El area de su cuadrado es:\" . m"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "Break"
+              }
+            ],
+            "variableAsignement": {
+              "name": "m",
+              "value": {
+                "value": 0,
+                "type": "int"
+              },
+              "operation": {
+                "value": "lado*lado"
+              }
+            }
+          },
+          {
+            "case": "2",
+            "callExpression": [
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "Dame el radio del circulo"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "read",
+                "arguments": {
+                  "value": "ra"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "\"El area de su circulo es: \" . r"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "Break"
+              }
+            ],
+            "variableAsignement": {
+              "name": "r",
+              "value": {
+                "value": 0.0,
+                "type": "float"
+              },
+              "operation": {
+                "value": "pi*(ra*ra)"
+              }
+            }
+          },
+          {
+            "case": 3,
+            "callExpression": [
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "Ingrese la base de su triangulo"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "read",
+                "arguments": {
+                  "value": "bs"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "Ingrese la altura de su triangulo"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "read",
+                "arguments": {
+                  "value": "al"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "\"El area de su triangulo es: \" . are"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "Break"
+              }
+            ],
+            "variableAsignement": {
+              "name": "are",
+              "value": {
+                "value": 0,
+                "type": "int"
+              },
+              "operation": {
+                "value": "(bs*al)/2"
+              }
+            }
+          },
+          {
+            "case": 4,
+            "callExpression": [
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "Ingrese la medida de los lados del pentagono"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "read",
+                "arguments": {
+                  "value": "nl"
+                },
+                "paramType": "float"
+              },
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "Ingrese el apotema de su pentagono"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "read",
+                "arguments": {
+                  "value": "a"
+                },
+                "paramType": "string"
+              },
+              {
+                "function": "print",
+                "arguments": {
+                  "value": "\"El area de su pentagono es: \" . pen"
+                },
+                "paramType": "string"
+              }
+            ],
+            "variableAsignement": {
+              "name": "p",
+              "value": {
+                "value": 0.0,
+                "type": "float"
+              },
+              "operation": {
+                "value": "nl*5"
+              }
+            }
+          }
+        ],
+        "defaultCase": {
+          "default": true,
+          "callExpression": {
+            "function": "print",
+            "arguments": {
+              "value": "sin coincidencias"
+            },
+            "paramType": "string"
+          }
+        }
+      }
+    }
+  ]
+}

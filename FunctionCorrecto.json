@@ -1,0 +1,147 @@
+{
+  "Program": [
+    {
+      "VariableDeclaration": {
+        "name": "x",
+        "value": {
+          "value": 1,
+          "type": "int"
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "d",
+        "value": {
+          "value": "[1, 2, 3]",
+          "type": "Array",
+          "dinamic": {
+            "value": true
+          }
+        },
+        "longitud": {
+          "value": 3
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "a",
+        "value": {
+          "value": 0,
+          "type": "int"
+        }
+      }
+    },
+    {
+      "VariableAsignement": {
+        "name": "a",
+        "value": {
+          "value": 2,
+          "type": "int"
+        }
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "valor es: 1"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "Function": {
+        "name": "asd",
+        "parameters": {
+          "value": "a:any"
+        },
+        "block": [
+          {
+            "ParameterAsignement": {
+              "name": "a",
+              "value": {
+                "value": 1,
+                "type": "int"
+              }
+            }
+          },
+          {
+            "CallExpression": {
+              "function": "Return",
+              "value": {
+                "value": "a",
+                "type": "any"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "Function": {
+        "name": "bt",
+        "parameters": {
+          "value": "a:any, b:any, c:any, d:any, e:any, f:any, g:any"
+        },
+        "block": [
+          {
+            "CallExpression": {
+              "function": "print",
+              "arguments": {
+                "value": "b+2"
+              },
+              "paramType": "string"
+            }
+          },
+          {
+            "CallExpression": {
+              "function": "Return",
+              "value": {
+                "value": 4,
+                "type": "int"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "Function": {
+        "name": "at",
+        "parameters": {
+          "value": "a:any, b:any"
+        },
+        "explicitType": "int",
+        "block": [
+          {
+            "CallExpression": {
+              "function": "print",
+              "arguments": {
+                "value": "a"
+              },
+              "paramType": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "FunctionCall": {
+        "function": "bt",
+        "paramenters": {
+          "value": "a: 1, b: 5, c: 5, d: 11, e: 9, f: 65, g: 9"
+        }
+      }
+    },
+    {
+      "FunctionCall": {
+        "function": "asd",
+        "paramenters": {
+          "value": "a: 5"
+        }
+      }
+    }
+  ]
+}

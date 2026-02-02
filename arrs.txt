@@ -1,0 +1,22 @@
+// Supongamos que matriz es: [[10, 20], [30, 40]]
+var matriz = [[10, 20], [30, 40]];
+
+// Bucle externo (recorre las filas)
+for ( var i in 0..1) {
+    // Bucle interno (recorre las columnas)
+    for (var j in 0..1) {
+        
+        // AQUÍ ESTÁ LA CLAVE:
+        // El usuario escribe 'i:j' en lugar de '0:0'
+        print(matriz[i:j]); 
+    }
+}
+var x = [1, 2, 3, 4, [1.1, 1.2, 1.3], 2];
+var k = 0; // Contador para el hijo
+// Mientras k sea menor al tamaño del subarray
+while (k < 3) {
+    // Dejas fijo el '4' y varías la 'k'
+    var valor = x[4:k]; 
+    print(valor);
+    k++;
+}

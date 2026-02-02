@@ -1,0 +1,1 @@
+var concat = "esto es una variable " . "concatenada!";

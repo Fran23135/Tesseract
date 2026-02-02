@@ -1,0 +1,90 @@
+int op;
+float m;
+var lado;
+var bs;
+var al;
+var are;
+float pi = 3.1415926;
+ var r;
+ var ra;
+ float nl;
+ var a;
+ var pen;
+ var p;
+  print("QUE AREA DESEA CALCULAR?");
+  print("1.- Area de un cuadrado");
+  print("2.- Area de un Circulo");
+  print("3.- Area de un Triangulo");
+  print("4.-Area de un Pentagono");
+  print("Selecciona una opcion");
+  read(op);
+   if(op==1){
+    print("Dame un numero\n");
+            m = lado*lado;
+            print("El area de su cuadrado es: " .m);
+   }else if(op==2){
+      print("Dame el radio del circulo");
+           read(ra);
+           r = pi*(ra*ra);
+           print("El area de su circulo es: " .r);
+   }else if(op==3){
+     print("Ingrese la base de su triangulo");
+           read(bs);
+           print("Ingrese la altura de su triangulo");
+           read(al);
+            are = (bs*al)/2;
+            print("El area de su triangulo es: ". are);
+   }else if(op==4){
+      print("Ingrese la medida de los lados del pentagono");
+           read(nl);
+           print("Ingrese el apotema de su pentagono");
+           read(a);
+           p = nl*5;
+           //pen = (p*a)/2;
+
+           //print("El area de su pentagono es: " . pen);
+   }else{
+         print("ninguna opcion coincide");  
+   }
+
+  /* switch(op){
+       case "1":
+            print("Dame un numero\n");
+            read(lado);
+            m = lado*lado;
+            print("El area de su cuadrado es:" . m);
+           break;
+       case "2":
+           print("Dame el radio del circulo");
+           read(ra);
+           r= pi*(ra*ra);
+           print("El area de su circulo es: " . r);
+           break;
+       case 3:
+           print("Ingrese la base de su triangulo");
+           read(bs);
+           print("Ingrese la altura de su triangulo");
+           read(al);
+            are = (bs*al)/2;
+            print("El area de su triangulo es: ". are);
+            break;
+       case 4:
+           print("Ingrese la medida de los lados del pentagono");
+           read(nl);
+           print("Ingrese el apotema de su pentagono");
+           read(a);
+           p = nl*5;
+        //   pen = (p*a)/2;
+
+           print("El area de su pentagono es: " . pen);
+        default:
+         print("sin coincidencias");   
+
+   }*/
+
+
+if("a"=="b"){
+    print("si");
+}else if("c"=="b"){
+    print("no");
+}

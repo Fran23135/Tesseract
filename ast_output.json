@@ -1,0 +1,173 @@
+{
+  "Program": [
+    {
+      "VariableDeclaration": {
+        "name": "x",
+        "value": {
+          "value": 1,
+          "type": "int"
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "d",
+        "value": {
+          "value": "[1, 2, 3]",
+          "type": "Array",
+          "dinamic": {
+            "value": true
+          }
+        },
+        "longitud": {
+          "value": 3
+        }
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "a",
+        "value": {
+          "value": 0,
+          "type": "int"
+        }
+      }
+    },
+    {
+      "VariableAsignement": {
+        "name": "a",
+        "value": {
+          "value": 2,
+          "type": "int"
+        }
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "valores: 1"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "Function": {
+        "name": "asd",
+        "parameters": {
+          "value": "a:any"
+        },
+        "block": [
+          {
+            "ParameterAsignement": {
+              "name": "a",
+              "value": {
+                "value": 2,
+                "type": "int"
+              }
+            }
+          },
+          {
+            "CallExpression": {
+              "function": "Return",
+              "value": {
+                "value": "a"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "Function": {
+        "name": "bt",
+        "parameters": {
+          "value": "a:any, b:any, c:any, d:any, e:any, f:any, g:any"
+        },
+        "block": [
+          {
+            "CallExpression": {
+              "function": "print",
+              "arguments": {
+                "value": "b+2"
+              },
+              "paramType": "string"
+            }
+          },
+          {
+            "CallExpression": {
+              "function": "Return",
+              "value": {
+                "value": 4
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "Function": {
+        "name": "at",
+        "parameters": {
+          "value": "a:any, b:any"
+        },
+        "explicitType": "int",
+        "block": [
+          {
+            "CallExpression": {
+              "function": "print",
+              "arguments": {
+                "value": "b"
+              },
+              "paramType": "string"
+            }
+          },
+          {
+            "CallExpression": {
+              "function": "Return",
+              "value": {
+                "value": "b+1"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "VariableDeclaration": {
+        "name": "result",
+        "value": {
+          "value": "at(a: 2, b: 2)",
+          "type": "string"
+        }
+      }
+    },
+    {
+      "VariableAsignement": {
+        "name": "x",
+        "value": {
+          "value": "at(a: 2, b: 2)",
+          "type": "string"
+        }
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "print",
+        "arguments": {
+          "value": "\"Valor: \" . at(a: 2, b: 2)"
+        },
+        "paramType": "string"
+      }
+    },
+    {
+      "CallExpression": {
+        "function": "read",
+        "arguments": {
+          "value": "x"
+        },
+        "paramType": "Int"
+      }
+    }
+  ]
+}

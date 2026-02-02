@@ -1,0 +1,6 @@
+x = 3;
+age = 20;
+p  = 2;
+print x;
+print 25;
+print 150;

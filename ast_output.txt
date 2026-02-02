@@ -1,0 +1,60 @@
+Program
+  VariableDeclaration: x
+    Value: 1
+      Type: int
+  VariableDeclaration: d
+    Value: [1, 2, 3]
+      Type: Array
+      Dinamic: True
+    Longitud: 3
+  VariableDeclaration: a
+    Value: 0
+      Type: int
+  VariableAsignement: a
+    Value: 2
+      Type: int
+  CallExpression: print
+    Arguments: "valores: 1"
+    ParamType: string
+  Function: asd
+    Parameters: "a:any"
+    Block: BlockStart
+      ParameterAsignement: a
+        Value: 2
+          Type: int
+      CallExpression: Return
+        value: a
+    Block: BlockEnd
+  Function: bt
+    Parameters: "a:any, b:any, c:any, d:any, e:any, f:any, g:any"
+    Block: BlockStart
+      CallExpression: print
+        Arguments: b+2
+        ParamType: string
+      CallExpression: Return
+        value: 4
+    Block: BlockEnd
+  Function: at
+    Parameters: "a:any, b:any"
+      ExplicitType: int
+    Block: BlockStart
+      CallExpression: print
+        Arguments: b
+        ParamType: string
+          variableName: b
+      CallExpression: Return
+        value: b+1
+    Block: BlockEnd
+  VariableDeclaration: result
+    Value: at(a: 2, b: 2)
+      Type: string
+  VariableAsignement: x
+    Value: at(a: 2, b: 2)
+      Type: string
+  CallExpression: print
+    Arguments: "Valor: " . at(a: 2, b: 2)
+    ParamType: string
+  CallExpression: read
+    Arguments: x
+    ParamType: Int
+      Type: string

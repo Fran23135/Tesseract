@@ -1,0 +1,13 @@
+Program
+  VariableDeclaration: x
+    Value: 3
+  VariableDeclaration: age
+    Value: 20
+  VariableDeclaration: p
+    Value: 2
+  CallExpression: print
+    Arguments: x
+  CallExpression: print
+    Arguments: 25
+  CallExpression: print
+    Arguments: 150

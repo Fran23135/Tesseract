@@ -1,0 +1,34 @@
+assign x NULL
+assign z NULL
+assign concat "esto es una variable " . "concatenada!"
+assign nombre "Robert"
+assign sum 6
+assign d 5
+assign bool True
+assign b 7.40
+assign numero 0
+assign range 1..5
+assign arr 1,2,3,4
+assign ars 1,2,3
+call print "esto es una funcion"
+call print 3
+call print "hola mi Compilador"
+call print sum
+call print 2
+call read x
+call print "el input de read es
+call print "se ejecuta el codigo"
+call print "b es igual que mundo"
+call print "relleno"
+assign inter NULL
+call print "inter es mayor a 30!"
+call print i
+call print "ejecutas un while!"
+assign number1 24
+assign lt 0
+assign tp 0.0
+assign fb False
+assign pb ""
+call print number1 . " es mayor a 20 o 40"
+call print number1 . " es menor a 30"
+call print "print de relleno"

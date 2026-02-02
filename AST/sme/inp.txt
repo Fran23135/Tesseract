@@ -1,0 +1,8 @@
+var x = 2;
+
+
+var d = {"name":(1,3,4)};
+var rn = 1..3;
+var tp = (1,2);
+var arr = [1,2,3];
+print(arr[0]);

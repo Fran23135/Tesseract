@@ -1,0 +1,7 @@
+library Math
+var x = 5;
+print(mPI);
+sqrt(2);
+print(x);
+int f = 2;
+print(f);

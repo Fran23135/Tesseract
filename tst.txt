@@ -1,0 +1,51 @@
+var x = 1;
+var d = [1,2,3];
+var a = 0;
+int f = 0;
+;
+print(f);
+a = 2;
+if(a==1 || x==1){
+    print("condicion verdadera");
+}
+
+print("valores: #(x)");
+
+function asd(a){
+    a = 2;
+    return a;
+}
+function bt(a,b,c,d,e,f,g){
+    print(b+2);
+    return 3+x;
+   /*for(var i in 0..4){
+        print(i);
+    }*/
+}
+int function at(a,b){
+    print(b);
+    return b;
+}
+//bt(1,5,5,11,9,65,9);
+var result = at(2,2);
+x = at(2,2);
+print("Valor: " . at(2,2));
+read(a);
+/*perform{
+ print("repite");
+ read(x).typeint();
+}while(x==0)
+*/
+
+//read(x).typeint();
+/*switch(x){
+    case 1:
+    print("es uno " . x);
+    break;
+    case 2:
+    print("es dos");
+    break;
+    default:
+    print("No es ninguna");
+    break;
+}*/
