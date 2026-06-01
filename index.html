@@ -293,7 +293,9 @@ require(['vs/editor/editor.main'], function() {
         }
     });
 
-    base: 'vs-dark',
+    // 3. TEMA "TESSLANG DARK MODERN" (Asegúrate de usar punto después de editor)
+    monaco.editor.defineTheme('tesslang-dark-modern', {
+        base: 'vs-dark',
         inherit: true,
         rules: [
             { token: 'keyword.control', foreground: 'C586C0' },
@@ -323,7 +325,7 @@ require(['vs/editor/editor.main'], function() {
         }
     });
 
-    // Tema claro genérico (Corregido a monaco.editor.defineTheme)
+    // Tema claro alternativo (También con punto)
     monaco.editor.defineTheme('tesseract-light', {
         base: 'vs', inherit: true,
         rules: [
