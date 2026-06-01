@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesseract Language Playground</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background-color: #2d2d2d;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #3c3c3c;
+        }
+        h1 { font-size: 1.2rem; color: #569cd6; }
+        .controls { display: flex; gap: 15px; align-items: center; }
+        select, button {
+            background-color: #333333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        select:focus, button:focus { border-color: #007acc; outline: none; }
+        button.run-btn { background-color: #0e639c; border: none; font-weight: bold; }
+        button.run-btn:hover { background-color: #1177bb; }
+        
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .pane-title {
+            background-color: #252526;
+            padding: 6px 15px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #858585;
+            border-bottom: 1px solid #2d2d2d;
+        }
+        #editor {
+            flex: 1;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1rem;
+            padding: 15px;
+            border: none;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+        .terminal-container {
+            flex: 1;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        #output {
+            flex: 1;
+            color: #00ff00;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            line-height: 1.4;
+        }
+        .input-line {
+            display: flex;
+            margin-top: 5px;
+            border-top: 1px solid #222;
+            padding-top: 5px;
+        }
+        .prompt { color: #00ff00; font-family: monospace; margin-right: 8px; }
+        #stdin {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.95rem;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Tesseract Language Playground</h1>
+        <div class="controls">
+            <div>
+                <label for="syntax">Sintaxis: </label>
+                <select id="syntax">
+                    <option value="-b">Llaves ({})</option>
+                    <option value="-i">Indentación</option>
+                </select>
+            </div>
+            <div>
+                <label for="target">Modo: </label>
+                <select id="target">
+                    <option value="interpret">Interpretar</option>
+                    <option value="native">Compilación Nativa (LLVM)</option>
+                    <option value="web">Transpilación Web (JS)</option>
+                </select>
+            </div>
+            <button class="run-btn" id="runBtn">Ejecutar (Run)</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="pane" style="border-right: 2px solid #2d2d2d;">
+            <div class="pane-title">Código Tesseract</div>
+            <textarea id="editor" placeholder="// Escribe tu código Tesseract aquí...&#10;print('¡Hola Mundo!');" spellcheck="false">// Código de prueba
+print("Ingresa tu nombre: ");
+var nombre = input();
+print("Hola " . nombre . " bienvenido a Tesseract.");</textarea>
+        </div>
+
+        <div class="pane">
+            <div class="pane-title">Consola de Salida</div>
+            <div class="terminal-container">
+                <div id="output">Haz clic en 'Ejecutar' para correr el código...</div>
+                <div class="input-line">
+                    <span class="prompt">&gt;</span>
+                    <input type="text" id="stdin" placeholder="Escribe aquí para mandar datos al programa (stdin)..." disabled />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CAMBIA ESTA URL por la de tu Hugging Face Space real.
+        // Formato: wss://<nombre_usuario>-<nombre_space>.hf.space/ws
+        const WS_URL = "wss://tu_usuario-tu_space.hf.space/ws";
+
+        const editor = document.getElementById('editor');
+        const output = document.getElementById('output');
+        const stdin = document.getElementById('stdin');
+        const runBtn = document.getElementById('runBtn');
+        const syntaxSelect = document.getElementById('syntax');
+        const targetSelect = document.getElementById('target');
+
+        let ws = null;
+
+        runBtn.addEventListener('click', () => {
+            // Limpiar la consola cada vez que se presiona Run
+            output.textContent = "Conectando al entorno de ejecución...\n";
+            stdin.disabled = true;
+            stdin.value = "";
+
+            if (ws) {
+                ws.close();
+            }
+
+            // Iniciar conexión WebSocket con el backend en Hugging Face
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                output.textContent += "Entorno conectado. Ejecutando Tesseract...\n\n";
+                stdin.disabled = false;
+                stdin.focus();
+
+                // Enviar la configuración inicial del entorno y el código
+                const payload = {
+                    code: editor.value,
+                    syntax: syntaxSelect.value,
+                    target: targetSelect.value
+                };
+                ws.send(JSON.stringify(payload));
+            };
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                
+                if (msg.type === 'stdout') {
+                    output.textContent += msg.data;
+                    // Auto-scroll hacia abajo de la consola
+                    output.scrollTop = output.scrollHeight;
+                } else if (msg.type === 'exit') {
+                    output.textContent += msg.data;
+                    output.scrollTop = output.scrollHeight;
+                    stdin.disabled = true;
+                }
+            };
+
+            ws.onerror = (err) => {
+                output.textContent += "\n[Error de conexión con el servidor backend]";
+                stdin.disabled = true;
+            };
+
+            ws.onclose = () => {
+                ws = null;
+            };
+        });
+
+        // Capturar la entrada de texto del usuario en consola (stdin) al dar Enter
+        stdin.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && ws && ws.readyState === WebSocket.OPEN) {
+                const inputValue = stdin.value;
+                
+                // Mostrar en consola de manera visual lo que el usuario escribió
+                output.textContent += inputValue + "\n";
+                output.scrollTop = output.scrollHeight;
+
+                // Mandar la entrada de datos al backend
+                ws.send(JSON.stringify({ type: 'stdin', data: inputValue }));
+                stdin.value = "";
+            }
+        });
+    </script>
+</body>
+</html>
