@@ -282,9 +282,11 @@
             <textarea id="editor" placeholder="// Escribe tu código Tesseract aquí..." spellcheck="false">// Código de prueba interactivo
 print("--- TEST DE ENTRADA (stdin) ---");
 print("Ingresa tu nombre: ");
-var nombre = input();
+var nombre;
+read(nombre);
 print("Ingresa tu edad: ");
-var edad = input();
+var edad;
+read(edad);
 print("");
 print("Resumen:");
 print("Nombre: " . nombre);
