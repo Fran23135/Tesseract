@@ -460,7 +460,6 @@ runBtn.addEventListener('click', () => {
             debug: debugCheck.checked
         };
         
-        // Un pequeño delay de 250ms asegura que el proxy de HF haya ruteado el túnel por completo
         setTimeout(() => {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify(payload));
@@ -478,7 +477,9 @@ runBtn.addEventListener('click', () => {
             const color = msg.data.includes("código 0") ? "var(--text-muted)" : "var(--danger)";
             output.innerHTML += `\n<span style='color: ${color}'>${msg.data}</span>`;
             output.scrollTop = output.scrollHeight;
-            finalizarEjecucion();
+            
+            // CORRECCIÓN: Cerramos el socket limpiamente desde el cliente al terminar
+            if (ws) ws.close(); 
         }
     };
 
@@ -487,17 +488,12 @@ runBtn.addEventListener('click', () => {
         finalizarEjecucion();
     };
 
+    // Este evento ahora se encarga de centralizar la limpieza del estado
     ws.onclose = () => {
         ws = null;
         finalizarEjecucion();
     };
 });
-
-function finalizarEjecucion(){
-    stdin.disabled = true;
-    runBtn.disabled = false;
-    runBtn.textContent = "► Ejecutar";
-}
 
 stdin.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && ws && ws.readyState === WebSocket.OPEN) {
