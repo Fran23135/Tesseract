@@ -213,7 +213,7 @@
 
     <script>
         // === CONFIGURACIÓN DE TU BACKEND ===
-const WS_URL = "wss://tu_usuario-tu_space.hf.space/ws";
+const WS_URL = "wss://Fran23135-Tesseractplayground.hf.space/ws";
 
 let tesseractEditor = null;
 
@@ -327,13 +327,34 @@ require(['vs/editor/editor.main'], function() {
 
     // Tema claro alternativo (También con punto)
     monaco.editor.defineTheme('tesseract-light', {
-        base: 'vs', inherit: true,
+        base: 'vs',
+        inherit: true,
         rules: [
-            { token: 'keyword.control', foreground: '0000ff' },
-            { token: 'storage.type', foreground: 'a31515' },
-            { token: 'support.function', foreground: '098658' }
+            { token: 'keyword.control', foreground: 'AF00DB' },                  // Morado sutil
+            { token: 'keyword.control.import', foreground: 'AF00DB' },           // Morado sutil
+            { token: 'entity.name.import', foreground: '005CC5', fontStyle: 'bold' }, // Azul marino
+            { token: 'storage.type', foreground: '005CC5' },                     // Azul marino
+            { token: 'support.function', foreground: '745300' },                 // Ocre/marrón técnico
+            { token: 'entity.name.function', foreground: '745300' },             // Ocre/marrón técnico
+            { token: 'string.quoted.double', foreground: 'A31515' },             // Rojo ladrillo clásico
+            { token: 'string.quoted.simple', foreground: 'A31515' },             // Rojo ladrillo clásico
+            { token: 'constant.character.escape', foreground: '0000FF' },        // Azul eléctrico
+            { token: 'constant.numeric', foreground: '098658' },                 // Verde esmeralda oscuro
+            { token: 'keyword.operator', foreground: '333333' },                 // Gris oscuro para operadores
+            { token: 'comment.line', foreground: '6A737D', fontStyle: 'italic' }, // Gris pizarra moderno
+            { token: 'comment.block', foreground: '6A737D', fontStyle: 'italic' } // Gris pizarra moderno
         ],
-        colors: { 'editor.background': '#ffffff' }
+        colors: {
+            'editor.background': '#FAFAFA',                         // Blanco roto/suave que no cansa la vista
+            'editor.foreground': '#24292E',                         // Carbón oscuro para el texto normal
+            'editorLineNumber.foreground': '#A0A0A0',               // Números de línea atenuados
+            'editorLineNumber.activeForeground': '#4A4A4A',         // Número de línea activo más oscuro
+            'editorCursor.foreground': '#000000',                   // Cursor negro
+            'editor.selectionBackground': '#ADD6FF',                // Azul claro translúcido para selección
+            'editor.inactiveSelectionBackground': '#E4F1FF',
+            'editor.lineHighlightBackground': '#F2F2F2',            // Resaltado de línea actual muy sutil
+            'editorIndentGuide.background1': '#E1E4E8'              // Guías de indentación limpias
+        }
     });
 
     // Código de prueba inicial cargado en el Playground
