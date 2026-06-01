@@ -3,156 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesseract Language Playground</title>
+    <title>Tesseract Playground</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* --- VARIABLES DE COLOR (Tema Noche por defecto) --- */
+        :root {
+            /* Colores de fondo */
+            --bg-main: #121212;
+            --bg-panel: #1e1e1e;
+            --bg-header: #1e1e1e;
+            --bg-controls: #2d2d2d;
+            --bg-terminal: #000000;
+            
+            /* Colores de texto */
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --text-header: #569cd6;
+            --text-terminal: #00ff00; /* Verde matrix */
+            
+            /* Bordes y Sombras */
+            --border-color: #333333;
+            --shadow: 0 4px 6px rgba(0,0,0,0.3);
+            
+            /* Acentuación */
+            --accent: #007acc;
+            --accent-hover: #1177bb;
+            --danger: #d16d6d;
+        }
+
+        /* --- VARIABLES TEMA DÍA --- */
+        body.light-mode {
+            --bg-main: #f5f5f5;
+            --bg-panel: #ffffff;
+            --bg-header: #ffffff;
+            --bg-controls: #e0e0e0;
+            --bg-terminal: #f0f0f0;
+            
+            --text-main: #333333;
+            --text-muted: #666666;
+            --text-header: #00569c;
+            --text-terminal: #006600; /* Verde oscuro */
+            
+            --border-color: #d0d0d0;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* --- ESTILOS GENERALES --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s; }
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1e1e1e;
-            color: #d4d4d4;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            padding: 15px; /* Margen externo para que flote */
         }
+
+        /* --- CABECERA --- */
         header {
-            background-color: #2d2d2d;
+            background-color: var(--bg-header);
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #3c3c3c;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
         }
-        h1 { font-size: 1.2rem; color: #569cd6; }
-        .controls { display: flex; gap: 15px; align-items: center; }
-        select, button {
-            background-color: #333333;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 6px 12px;
-            border-radius: 4px;
+
+        .brand { display: flex; align-items: center; gap: 10px; }
+        h1 { font-size: 1.3rem; color: var(--text-header); font-weight: 600; }
+        
+        .header-right { display: flex; align-items: center; gap: 20px; }
+
+        .controls { display: flex; gap: 10px; align-items: center; }
+        
+        /* Estilos redondeados para inputs y selects */
+        select, button:not(.theme-toggle) {
+            background-color: var(--bg-controls);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 8px; /* Redondeado */
             cursor: pointer;
             font-size: 0.9rem;
+            outline: none;
         }
-        select:focus, button:focus { border-color: #007acc; outline: none; }
-        button.run-btn { background-color: #0e639c; border: none; font-weight: bold; }
-        button.run-btn:hover { background-color: #1177bb; }
+        select:focus, button:focus { border-color: var(--accent); }
         
+        button.run-btn { 
+            background-color: var(--accent); 
+            border: none; 
+            font-weight: 600; 
+            color: white;
+            padding: 8px 20px;
+        }
+        button.run-btn:hover { background-color: var(--accent-hover); }
+        button.run-btn:disabled { background-color: var(--border-color); cursor: not-allowed; }
+
+        /* --- SWITCH DE TEMA --- */
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .theme-switch {
+            display: inline-block;
+            height: 24px;
+            position: relative;
+            width: 50px;
+        }
+        .theme-switch input { display:none; }
+        .slider {
+            background-color: var(--bg-controls);
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid var(--border-color);
+        }
+        .slider:before {
+            background-color: white;
+            bottom: 3px;
+            content: "";
+            height: 16px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 16px;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider { background-color: var(--accent); border-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
         .main-container {
             display: flex;
             flex: 1;
+            gap: 15px; /* Espacio entre paneles */
             overflow: hidden;
+            padding-bottom: 5px;
         }
+
         .pane {
             flex: 1;
             display: flex;
             flex-direction: column;
             height: 100%;
+            background-color: var(--bg-panel);
+            border-radius: 12px; /* Paneles redondeados */
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            overflow: hidden;
         }
+
         .pane-title {
-            background-color: #252526;
-            padding: 6px 15px;
+            background-color: var(--bg-header);
+            padding: 8px 15px;
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #858585;
-            border-bottom: 1px solid #2d2d2d;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
         }
+
+        /* --- EDITOR --- */
         #editor {
             flex: 1;
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 1rem;
+            background-color: transparent;
+            color: var(--text-main);
+            font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            font-size: 0.95rem;
             padding: 15px;
             border: none;
             resize: none;
             outline: none;
-            line-height: 1.5;
+            line-height: 1.6;
         }
+
+        /* --- TERMINAL --- */
         .terminal-container {
             flex: 1;
-            background-color: #000;
+            background-color: var(--bg-terminal);
             display: flex;
             flex-direction: column;
-            padding: 10px;
+            padding: 15px;
+            margin: 10px; /* Margen interno para que no pegue al borde del panel */
+            border-radius: 8px;
+            border: 1px solid #000; /* Borde oscuro para la terminal */
         }
+
         #output {
             flex: 1;
-            color: #00ff00;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 0.95rem;
+            color: var(--text-terminal);
+            font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            font-size: 0.9rem;
             white-space: pre-wrap;
             overflow-y: auto;
-            line-height: 1.4;
+            line-height: 1.5;
         }
+
         .input-line {
             display: flex;
-            margin-top: 5px;
-            border-top: 1px solid #222;
-            padding-top: 5px;
+            margin-top: 10px;
+            border-top: 1px solid rgba(128,128,128,0.2);
+            padding-top: 8px;
+            align-items: center;
         }
-        .prompt { color: #00ff00; font-family: monospace; margin-right: 8px; }
+        .prompt { color: var(--text-terminal); font-family: monospace; margin-right: 10px; font-weight: bold; }
         #stdin {
             flex: 1;
             background: transparent;
             border: none;
-            color: #fff;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 0.95rem;
+            color: #fff; /* Siempre blanco en la terminal negra */
+            font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            font-size: 0.9rem;
             outline: none;
         }
+        body.light-mode #stdin { color: #000; } /* Stdin negro en modo claro si la terminal cambia */
+        body.light-mode .terminal-container { border-color: var(--border-color); }
+
+        /* Scrollbar estilizada y redondeada */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <header>
-        <h1>Tesseract Language Playground</h1>
-        <div class="controls">
-            <div>
-                <label for="syntax">Sintaxis: </label>
+        <div class="brand">
+            <h1>Tesseract Playground</h1>
+        </div>
+        <div class="header-right">
+            <div class="theme-switch-wrapper">
+                <span>Noche</span>
+                <label class="theme-switch" for="checkbox">
+                    <input type="checkbox" id="checkbox" />
+                    <div class="slider"></div>
+                </label>
+                <span>Día</span>
+            </div>
+
+            <div class="controls">
                 <select id="syntax">
                     <option value="-b">Llaves ({})</option>
                     <option value="-i">Indentación</option>
                 </select>
-            </div>
-            <div>
-                <label for="target">Modo: </label>
                 <select id="target">
                     <option value="interpret">Interpretar</option>
-                    <option value="native">Compilación Nativa (LLVM)</option>
-                    <option value="web">Transpilación Web (JS)</option>
+                    <option value="native">Nativo (LLVM)</option>
+                    <option value="web">Web (JS)</option>
                 </select>
+                <button class="run-btn" id="runBtn">Ejecutar</button>
             </div>
-            <button class="run-btn" id="runBtn">Ejecutar (Run)</button>
         </div>
     </header>
 
     <div class="main-container">
-        <div class="pane" style="border-right: 2px solid #2d2d2d;">
-            <div class="pane-title">Código Tesseract</div>
-            <textarea id="editor" placeholder="// Escribe tu código Tesseract aquí...&#10;print('¡Hola Mundo!');" spellcheck="false">// Código de prueba
+        <div class="pane">
+            <div class="pane-title">Código fuente (.tss)</div>
+            <textarea id="editor" placeholder="// Escribe tu código Tesseract aquí..." spellcheck="false">// Código de prueba interactivo
+print("--- TEST DE ENTRADA (stdin) ---");
 print("Ingresa tu nombre: ");
 var nombre = input();
-print("Hola " . nombre . " bienvenido a Tesseract.");</textarea>
+print("Ingresa tu edad: ");
+var edad = input();
+print("");
+print("Resumen:");
+print("Nombre: " . nombre);
+print("Edad: " . edad);</textarea>
         </div>
 
         <div class="pane">
             <div class="pane-title">Consola de Salida</div>
             <div class="terminal-container">
-                <div id="output">Haz clic en 'Ejecutar' para correr el código...</div>
+                <div id="output">Haz clic en 'Ejecutar' para comenzar...</div>
                 <div class="input-line">
                     <span class="prompt">&gt;</span>
-                    <input type="text" id="stdin" placeholder="Escribe aquí para mandar datos al programa (stdin)..." disabled />
+                    <input type="text" id="stdin" placeholder="Escribe aquí y pulsa Enter..." disabled />
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // CAMBIA ESTA URL por la de tu Hugging Face Space real.
-        // Formato: wss://<nombre_usuario>-<nombre_space>.hf.space/ws
+        // === CONFIGURACIÓN ===
+        // CAMBIA ESTO por tu URL de WebSocket real de Hugging Face.
+        // Ejemplo: wss://tu_usuario-tu_space.hf.space/ws
         const WS_URL = "wss://tu_usuario-tu_space.hf.space/ws";
 
+        // === GESTIÓN DE TEMA (Noche/Día) ===
+        const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+        const currentTheme = localStorage.getItem('theme');
+
+        if (currentTheme) {
+            document.body.classList.add(currentTheme);
+            if (currentTheme === 'light-mode') {
+                toggleSwitch.checked = true;
+            }
+        }
+
+        function switchTheme(e) {
+            if (e.target.checked) {
+                document.body.classList.add('light-mode');
+                localStorage.setItem('theme', 'light-mode');
+            } else {
+                document.body.classList.remove('light-mode');
+                localStorage.setItem('theme', 'dark-mode'); // Opcional, por defecto es dark
+            }
+        }
+
+        toggleSwitch.addEventListener('change', switchTheme, false);
+
+
+        // === LÓGICA DEL PLAYGROUND ===
         const editor = document.getElementById('editor');
         const output = document.getElementById('output');
         const stdin = document.getElementById('stdin');
@@ -163,24 +344,26 @@ print("Hola " . nombre . " bienvenido a Tesseract.");</textarea>
         let ws = null;
 
         runBtn.addEventListener('click', () => {
-            // Limpiar la consola cada vez que se presiona Run
-            output.textContent = "Conectando al entorno de ejecución...\n";
+            // Reiniciar terminal
+            output.innerHTML = "<span style='color: var(--accent)'>[Conectando al backend asíncrono en Hugging Face...]</span>\n";
             stdin.disabled = true;
             stdin.value = "";
+            runBtn.disabled = true;
+            runBtn.textContent = "Corriendo...";
 
             if (ws) {
                 ws.close();
             }
 
-            // Iniciar conexión WebSocket con el backend en Hugging Face
+            // Crear conexión WebSocket
             ws = new WebSocket(WS_URL);
 
             ws.onopen = () => {
-                output.textContent += "Entorno conectado. Ejecutando Tesseract...\n\n";
+                output.innerHTML += "<span style='color: var(--accent)'>[Entorno listo. Ejecutando Tesseract...]</span>\n\n";
                 stdin.disabled = false;
                 stdin.focus();
 
-                // Enviar la configuración inicial del entorno y el código
+                // Payload de configuración inicial
                 const payload = {
                     code: editor.value,
                     syntax: syntaxSelect.value,
@@ -193,36 +376,46 @@ print("Hola " . nombre . " bienvenido a Tesseract.");</textarea>
                 const msg = JSON.parse(event.data);
                 
                 if (msg.type === 'stdout') {
+                    // Reemplazar saltos de línea para HTML y añadir al output
                     output.textContent += msg.data;
-                    // Auto-scroll hacia abajo de la consola
                     output.scrollTop = output.scrollHeight;
                 } else if (msg.type === 'exit') {
-                    output.textContent += msg.data;
+                    output.innerHTML += `\n<span style='color: var(--text-muted)'>${msg.data}</span>`;
                     output.scrollTop = output.scrollHeight;
-                    stdin.disabled = true;
+                    finalizarEjecucion();
                 }
             };
 
             ws.onerror = (err) => {
-                output.textContent += "\n[Error de conexión con el servidor backend]";
-                stdin.disabled = true;
+                output.innerHTML += "\n<span style='color: var(--danger)'>[Error crítico: No se pudo conectar con el Space de Hugging Face. Asegúrate de que la URL de WebSocket es correcta y el Space está 'Running']</span>";
+                finalizarEjecucion();
             };
 
             ws.onclose = () => {
                 ws = null;
+                // Si se cierra inesperadamente sin mensaje de exit
+                if(runBtn.disabled){
+                    finalizarEjecucion();
+                }
             };
         });
 
-        // Capturar la entrada de texto del usuario en consola (stdin) al dar Enter
+        function finalizarEjecucion(){
+            stdin.disabled = true;
+            runBtn.disabled = false;
+            runBtn.textContent = "Ejecutar";
+        }
+
+        // Manejo de stdin (entrada de usuario)
         stdin.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && ws && ws.readyState === WebSocket.OPEN) {
                 const inputValue = stdin.value;
                 
-                // Mostrar en consola de manera visual lo que el usuario escribió
+                // Eco visual en consola (estilo usuario entrada)
                 output.textContent += inputValue + "\n";
                 output.scrollTop = output.scrollHeight;
 
-                // Mandar la entrada de datos al backend
+                // Enviar al backend
                 ws.send(JSON.stringify({ type: 'stdin', data: inputValue }));
                 stdin.value = "";
             }
