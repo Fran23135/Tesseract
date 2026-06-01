@@ -293,9 +293,7 @@ require(['vs/editor/editor.main'], function() {
         }
     });
 
-    // 3. TEMA "TESSLANG DARK MODERN" (Colores exactos de tu JSON de VS Code)
-    monaco.languages.defineTheme('tesslang-dark-modern', {
-        base: 'vs-dark',
+    base: 'vs-dark',
         inherit: true,
         rules: [
             { token: 'keyword.control', foreground: 'C586C0' },
@@ -325,8 +323,8 @@ require(['vs/editor/editor.main'], function() {
         }
     });
 
-    // Tema claro genérico por si se activa el toggle
-    monaco.languages.defineTheme('tesseract-light', {
+    // Tema claro genérico (Corregido a monaco.editor.defineTheme)
+    monaco.editor.defineTheme('tesseract-light', {
         base: 'vs', inherit: true,
         rules: [
             { token: 'keyword.control', foreground: '0000ff' },
