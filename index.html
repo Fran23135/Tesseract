@@ -360,9 +360,6 @@ require(['vs/editor/editor.main'], function() {
     // Código de prueba inicial cargado en el Playground
     const initialCode = [
         '// Demo de Tesseract con soporte nativo de tu extensión',
-        '',
-        'print("--- TEST DE ENTRADA CORREGIDO ---");',
-        '',
         'var nombre;',
         'const int limite = 18;',
         'var edad;',
@@ -435,7 +432,11 @@ const targetSelect = document.getElementById('target');
 const debugCheck = document.getElementById('debugCheck');
 
 let ws = null;
-
+function finalizarEjecucion() {
+    runBtn.disabled = false;
+    runBtn.textContent = "▶ Run"; // O "▶ Ejecutar", pon el texto original de tu diseño
+    stdin.disabled = true;        // Deshabilitar la entrada ya que el proceso terminó
+} 
 runBtn.addEventListener('click', () => {
     if (!tesseractEditor) return;
 
