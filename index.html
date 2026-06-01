@@ -5,23 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesseract Playground Pro</title>
     <style>
-        /* --- VARIABLES DE COLOR --- */
+        /* --- VARIABLES DE COLOR INTERFAZ (Basadas en tu TessLang Dark Modern) --- */
         :root {
-            --bg-main: #121212; --bg-panel: #1e1e1e; --bg-header: #1e1e1e;
-            --bg-controls: #2d2d2d; --bg-terminal: #000000;
-            --text-main: #e0e0e0; --text-muted: #a0a0a0; --text-header: #569cd6;
-            --text-terminal: #00ff00; --text-editor: #d4d4d4;
-            --border-color: #333333; --gutter-bg: #2d2d2d; --gutter-text: #858585;
+            --bg-main: #121212; 
+            --bg-panel: #1F1F1F; /* Tu color de fondo de editor */
+            --bg-header: #181818; /* Tu fondo de barras secundarias */
+            --bg-controls: #313131; /* Tu input background */
+            --bg-terminal: #000000;
+            --text-main: #CCCCCC; /* Tu editor foreground */
+            --text-muted: #858585; /* Tu editorLineNumber foreground */
+            --text-header: #C586C0; /* Tu color de keywords de control */
+            --text-terminal: #00ff00;
+            --border-color: #2B2B2B; /* Tu color de bordes activo */
             --shadow: 0 4px 6px rgba(0,0,0,0.3);
-            --accent: #007acc; --accent-hover: #1177bb; --danger: #d16d6d;
+            --accent: #0078D4; /* Tu color de botones y foco */
+            --accent-hover: #1177bb; 
+            --danger: #d16d6d;
         }
 
         body.light-mode {
             --bg-main: #f5f5f5; --bg-panel: #ffffff; --bg-header: #ffffff;
             --bg-controls: #e0e0e0; --bg-terminal: #f0f0f0;
             --text-main: #333333; --text-muted: #666666; --text-header: #00569c;
-            --text-terminal: #006600; --text-editor: #333333;
-            --border-color: #d0d0d0; --gutter-bg: #f0f0f0; --gutter-text: #999999;
+            --text-terminal: #006600;
+            --border-color: #d0d0d0;
             --shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
@@ -35,7 +42,6 @@
             overflow: hidden; padding: 15px;
         }
 
-        /* Fuentes mono para código y terminal */
         .font-mono { font-family: 'Fira Code', 'Consolas', 'Courier New', monospace; font-size: 0.95rem; }
 
         /* --- CABECERA --- */
@@ -50,7 +56,6 @@
         h1 { font-size: 1.3rem; color: var(--text-header); font-weight: 600; }
         
         .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-
         .controls { display: flex; gap: 8px; align-items: center; }
         
         select, button:not(.theme-toggle) {
@@ -67,7 +72,6 @@
         button.run-btn:hover { background-color: var(--accent-hover); }
         button.run-btn:disabled { background-color: var(--border-color); cursor: not-allowed; opacity: 0.7; }
 
-        /* Estilo Checkbox Debug */
         .debug-control {
             display: flex; align-items: center; gap: 6px;
             font-size: 0.85rem; color: var(--text-muted);
@@ -110,28 +114,8 @@
             font-weight: 600;
         }
 
-        /* --- EDITOR CON NÚMEROS DE LÍNEA --- */
-        .editor-wrapper {
-            flex: 1; display: flex; overflow: hidden; /* Importante para el scroll interno */
-            position: relative;
-        }
-
-        /* Panel de números (Gutter) */
-        .line-numbers {
-            background-color: var(--gutter-bg); color: var(--gutter-text);
-            padding: 15px 10px; text-align: right;
-            user-select: none; overflow: hidden; /* Sincronizado por JS */
-            border-right: 1px solid var(--border-color);
-            line-height: 1.6; /* Debe coincidir con el textarea */
-        }
-
-        #editor {
-            flex: 1; background-color: transparent;
-            color: var(--text-editor);
-            padding: 15px; border: none; resize: none; outline: none;
-            line-height: 1.6;
-            overflow-y: auto; /* BARRA DE DESPLAZAMIENTO VERTICAL */
-            white-space: pre; overflow-x: auto; /* Scroll horizontal si es necesario */
+        .editor-container {
+            flex: 1; width: 100%; height: 100%; padding-top: 10px;
         }
 
         /* --- TERMINAL --- */
@@ -140,13 +124,12 @@
             display: flex; flex-direction: column;
             padding: 15px; margin: 10px;
             border-radius: 8px; border: 1px solid #000;
-            overflow: hidden; /* Contenedor padre */
+            overflow: hidden;
         }
 
         #output {
             flex: 1; color: var(--text-terminal);
-            overflow-y: auto; /* BARRA DE DESPLAZAMIENTO VERTICAL */
-            white-space: pre-wrap; line-height: 1.5;
+            overflow-y: auto; white-space: pre-wrap; line-height: 1.5;
             padding-right: 5px;
         }
 
@@ -157,20 +140,19 @@
         }
         .prompt { color: var(--text-terminal); margin-right: 10px; font-weight: bold; user-select: none;}
         #stdin {
-            flex: 1; background: transparent; border: none;
-            color: #fff; /* Siempre blanco en fondo negro */
-            outline: none;
+            flex: 1; background: transparent; border: none; color: #fff; outline: none;
         }
-        body.light-mode #stdin { color: #fff; } /* Mantenemos blanco en terminal negra incluso en modo claro */
         body.light-mode .terminal-container { border-color: var(--border-color); }
 
-        /* Scrollbar estilizada */
+        /* Scrollbars */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
     </style>
+
+    <!-- Cargador de Monaco Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -180,6 +162,7 @@
     <header>
         <h1>Tesseract Playground <span style="font-size: 0.8rem; opacity: 0.5;">Pro</span></h1>
         <div class="header-right">
+            <!-- Selector de Tema -->
             <div class="theme-switch-wrapper">
                 <span>🌙</span>
                 <label class="theme-switch" for="checkbox">
@@ -189,6 +172,7 @@
                 <span>☀️</span>
             </div>
 
+            <!-- Checkbox Debug -->
             <label class="debug-control">
                 <input type="checkbox" id="debugCheck">
                 <span>Debug (-d)</span>
@@ -212,41 +196,7 @@
     <div class="main-container">
         <div class="pane">
             <div class="pane-title">Código fuente (.tss)</div>
-            <div class="editor-wrapper">
-                <div class="line-numbers font-mono" id="lineNumbers">1</div>
-                <textarea id="editor" class="font-mono" placeholder="// Escribe tu código aquí..." spellcheck="false">// Demo de Tesseract Pro
-print("--- TEST DE ENTRADA");
-
-// Declaración
-var nombre;
-var edad;
-
-print("Ingresa tu nombre: ");
-// Sintaxis corregida: read(variable)
-read(nombre);
-
-print("Ingresa tu edad: ");
-read(edad);
-
-print("");
-print("--- RESUMEN ---");
-print("Hola " . nombre . ", tienes " . edad . " años.");
-
-if (edad >= 18) {
-    print("Eres mayor de edad.");
-} else {
-    print("Eres menor de edad.");
-}
-
-// Genera muchas líneas para probar scroll vertical
-print("\nProbando scroll del output:");
-var i = 0;
-while(i < 30){
-    print("Línea de salida número: " . i);
-    i = i + 1;
-}
-</textarea>
-            </div>
+            <div id="monaco-editor" class="editor-container"></div>
         </div>
 
         <div class="pane">
@@ -262,137 +212,275 @@ while(i < 30){
     </div>
 
     <script>
-        // === CONFIGURACIÓN ===
-        // CAMBIA ESTO por tu URL de WebSocket real de Hugging Face.
-        const WS_URL = "wss://Fran23135-Tesseractplayground.hf.space/ws";
+        // === CONFIGURACIÓN DE TU BACKEND ===
+const WS_URL = "wss://tu_usuario-tu_space.hf.space/ws";
 
-        // === GESTIÓN DE TEMA (Noche/Día) ===
-        const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
-        const currentTheme = localStorage.getItem('theme');
+let tesseractEditor = null;
 
-        if (currentTheme) {
-            document.body.classList.add(currentTheme);
-            if (currentTheme === 'light-mode') toggleSwitch.checked = true;
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
+require(['vs/editor/editor.main'], function() {
+    
+    // 1. Registrar identificador del lenguaje
+    monaco.languages.register({ id: 'tesseract' });
+
+    // 2. TOKENIZER MONARCH DEFINITIVO (Orden de prioridad corregido según tu .tmLanguage.json)
+    monaco.languages.setMonarchTokensProvider('tesseract', {
+        keywordsControl: [
+            'function', 'if', 'else', 'return', 'while', 'for', 
+            'perform', 'switch', 'break', 'continue', 'library', 
+            'from', 'use', 'as', 'al'
+        ],
+        storageTypes: ['int', 'string', 'bool', 'float', 'var', 'const', 'void','range','array','tuple','dict'],
+        supportFunctions: ['print', 'read'],
+
+        tokenizer: {
+            root: [
+                // 1. COMENTARIOS (Prioridad máxima para evitar falsos positivos)
+                [/\/\/.*$/, 'comment.line'],
+                [/\/\*/, { token: 'comment.block', next: '@commentBlock' }],
+
+                // 2. STRINGS (Antes de los identificadores para capturar comillas limpias)
+                [/"/, { token: 'string.quoted.double', next: '@stringDouble' }],
+                [/'/, { token: 'string.quoted.simple', next: '@stringSimple' }],
+
+                // 3. CAPTURA DE IMPORTS (library_imports)
+                [/\b(library|from)\b/, { token: 'keyword.control.import', next: '@importLine' }],
+
+                // 4. LLAMADAS A FUNCIONES (Debe ir obligatoriamente ANTES de los identificadores)
+                [/\b[a-zA-Z_]\w*(?=\s*\()/, 'entity.name.function'],
+
+                // 5. IDENTIFICADORES Y KEYWORDS (Evaluación por descarte)
+                [/[a-zA-Z_]\w*/, {
+                    cases: {
+                        '@keywordsControl': 'keyword.control',
+                        '@storageTypes': 'storage.type',
+                        '@supportFunctions': 'support.function',
+                        '@default': 'identifier'
+                    }
+                }],
+
+                // 6. NÚMEROS Y OPERADORES
+                [/\b\d+(\.\d+)?\b/, 'constant.numeric'],
+                [/(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!\.])/, 'keyword.operator']
+            ],
+
+            // Estado intermedio para procesar la línea de importación hasta el salto de línea ($)
+            importLine: [
+                [/\b(use|as|al)\b/, 'keyword.control.import'],
+                [/\b[a-zA-Z_]\w*\b/, 'entity.name.import'],
+                [/$/, { token: '', next: '@pop' }],
+                { include: '@root' }
+            ],
+
+            // Sub-estados de strings para procesar caracteres de escape (constant.character.escape)
+            stringDouble: [
+                [/[^\\"]+/, 'string.quoted.double'],
+                [/\\./, 'constant.character.escape'],
+                [/"/, { token: 'string.quoted.double', next: '@pop' }]
+            ],
+            stringSimple: [
+                [/[^\\']+/, 'string.quoted.simple'],
+                [/\\./, 'constant.character.escape'],
+                [/'/, { token: 'string.quoted.simple', next: '@pop' }]
+            ],
+
+            // Comentarios de bloque
+            commentBlock: [
+                [/[^\/*]+/, 'comment.block'],
+                [/\*\//, { token: 'comment.block', next: '@pop' }],
+                [/[/*]/, 'comment.block']
+            ]
         }
+    });
 
-        toggleSwitch.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                document.body.classList.add('light-mode');
-                localStorage.setItem('theme', 'light-mode');
-            } else {
-                document.body.classList.remove('light-mode');
-                localStorage.setItem('theme', 'dark-mode');
-            }
-        });
-
-
-        // === LÓGICA DEL EDITOR (Números de Línea) ===
-        const editor = document.getElementById('editor');
-        const lineNumbers = document.getElementById('lineNumbers');
-
-        function updateLineNumbers() {
-            // Contar saltos de línea y generar el texto del gutter
-            const lines = editor.value.split('\n').length;
-            let numbersArr = [];
-            for (let i = 1; i <= lines; i++) {
-                numbersArr.push(i);
-            }
-            lineNumbers.innerText = numbersArr.join('\n');
+    // 3. TEMA "TESSLANG DARK MODERN" (Colores exactos de tu JSON de VS Code)
+    monaco.languages.defineTheme('tesslang-dark-modern', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+            { token: 'keyword.control', foreground: 'C586C0' },
+            { token: 'keyword.control.import', foreground: 'C586C0' },
+            { token: 'entity.name.import', foreground: '4EC9B0', fontStyle: 'bold' },
+            { token: 'storage.type', foreground: '569CD6' },
+            { token: 'support.function', foreground: 'DCDCAA' },
+            { token: 'entity.name.function', foreground: 'DCDCAA' },
+            { token: 'string.quoted.double', foreground: 'CE9178' },
+            { token: 'string.quoted.simple', foreground: 'CE9178' },
+            { token: 'constant.character.escape', foreground: 'D7BA7D' },
+            { token: 'constant.numeric', foreground: 'B5CEA8' },
+            { token: 'keyword.operator', foreground: 'D4D4D4' },
+            { token: 'comment.line', foreground: '6A9955', fontStyle: 'italic' },
+            { token: 'comment.block', foreground: '6A9955', fontStyle: 'italic' }
+        ],
+        colors: {
+            'editor.background': '#1F1F1F',
+            'editor.foreground': '#CCCCCC',
+            'editorLineNumber.foreground': '#858585',
+            'editorLineNumber.activeForeground': '#C6C6C6',
+            'editorCursor.foreground': '#AEAFAD',
+            'editor.selectionBackground': '#264F78',
+            'editor.inactiveSelectionBackground': '#3A3D41',
+            'editor.lineHighlightBackground': '#2A2A2A',
+            'editorIndentGuide.background1': '#404040'
         }
+    });
 
-        // Sincronizar scroll vertical del gutter con el textarea
-        editor.addEventListener('scroll', () => {
-            lineNumbers.scrollTop = editor.scrollTop;
-        });
+    // Tema claro genérico por si se activa el toggle
+    monaco.languages.defineTheme('tesseract-light', {
+        base: 'vs', inherit: true,
+        rules: [
+            { token: 'keyword.control', foreground: '0000ff' },
+            { token: 'storage.type', foreground: 'a31515' },
+            { token: 'support.function', foreground: '098658' }
+        ],
+        colors: { 'editor.background': '#ffffff' }
+    });
 
-        // Actualizar números al escribir, pegar o cargar
-        editor.addEventListener('input', updateLineNumbers);
-        // Inicializar al cargar
-        updateLineNumbers();
+    // Código de prueba inicial cargado en el Playground
+    const initialCode = [
+        '// Demo de Tesseract con soporte nativo de tu extensión',
+        'from Math use PI as pi;',
+        'library IO al io;',
+        '',
+        'print("--- TEST DE ENTRADA CORREGIDO ---");',
+        '',
+        'var nombre;',
+        'const int limite = 18;',
+        'var edad;',
+        '',
+        'print("Ingresa tu nombre: ");',
+        'read(nombre);',
+        '',
+        'print("Ingresa tu edad: ");',
+        'read(edad);',
+        '',
+        'print("");',
+        'print("--- RESUMEN ---");',
+        'print("Hola " . nombre . ", tienes " . edad . " años.");',
+        '',
+        'if (edad >= limite) {',
+        '    print("Acceso concedido de forma nativa.\\n");',
+        '} else {',
+        '    print("Eres menor de edad.");',
+        '}',
+        '',
+        'print("\\nProbando scroll del output:");',
+        'var i = 0;',
+        'while(i < 30){',
+        '    print("Línea de salida número: " . i);',
+        '    i = i + 1;',
+        '}'
+    ].join('\n');
 
+    const isLight = document.body.classList.contains('light-mode');
+    tesseractEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+        value: initialCode,
+        language: 'tesseract',
+        theme: isLight ? 'tesseract-light' : 'tesslang-dark-modern',
+        automaticLayout: true,
+        fontSize: 14,
+        fontFamily: "'Fira Code', 'Consolas', monospace",
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        renderLineHighlight: 'all'
+    });
+});
 
-        // === LÓGICA DEL PLAYGROUND (WebSockets) ===
-        const output = document.getElementById('output');
-        const stdin = document.getElementById('stdin');
-        const runBtn = document.getElementById('runBtn');
-        const syntaxSelect = document.getElementById('syntax');
-        const targetSelect = document.getElementById('target');
-        const debugCheck = document.getElementById('debugCheck');
+// === GESTIÓN DE TEMA (Noche/Día) ===
+const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+const currentTheme = localStorage.getItem('theme');
 
-        let ws = null;
+if (currentTheme) {
+    document.body.classList.add(currentTheme);
+    if (currentTheme === 'light-mode' && toggleSwitch) toggleSwitch.checked = true;
+}
 
-        runBtn.addEventListener('click', () => {
-            // Reiniciar terminal con estilo
-            output.innerHTML = "<span style='color: var(--text-header)'>[Conectando asíncronamente con Hugging Face...]</span>\n";
-            stdin.disabled = true; stdin.value = "";
-            runBtn.disabled = true; runBtn.textContent = "⏱ Corriendo";
+toggleSwitch.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light-mode');
+        if (monaco.editor) monaco.editor.setTheme('tesseract-light');
+    } else {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark-mode');
+        if (monaco.editor) monaco.editor.setTheme('tesslang-dark-modern');
+    }
+});
 
-            if (ws) ws.close();
+// === LÓGICA DE WEBSOCKETS ===
+const output = document.getElementById('output');
+const stdin = document.getElementById('stdin');
+const runBtn = document.getElementById('runBtn');
+const syntaxSelect = document.getElementById('syntax');
+const targetSelect = document.getElementById('target');
+const debugCheck = document.getElementById('debugCheck');
 
-            // Crear conexión WebSocket
-            ws = new WebSocket(WS_URL);
+let ws = null;
 
-            ws.onopen = () => {
-                output.innerHTML += "<span style='color: var(--text-header)'>[Entorno listo. Compilando/Ejecutando Tesseract...]</span>\n\n";
-                stdin.disabled = false; stdin.focus();
+runBtn.addEventListener('click', () => {
+    if (!tesseractEditor) return;
 
-                // Payload de configuración inicial INCLUYENDO DEBUG
-                const payload = {
-                    code: editor.value,
-                    syntax: syntaxSelect.value,
-                    target: targetSelect.value,
-                    debug: debugCheck.checked // Envía true/false
-                };
-                ws.send(JSON.stringify(payload));
-            };
+    output.innerHTML = "<span style='color: var(--text-header)'>[Conectando asíncronamente con Hugging Face...]</span>\n";
+    stdin.disabled = true; stdin.value = "";
+    runBtn.disabled = true; runBtn.textContent = "⏱ Corriendo";
 
-            ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
-                
-                if (msg.type === 'stdout') {
-                    output.textContent += msg.data;
-                    // Auto-scroll de la terminal
-                    output.scrollTop = output.scrollHeight;
-                } else if (msg.type === 'exit') {
-                    // Colorear mensaje final según éxito/error (asumiendo 0 es éxito)
-                    const color = msg.data.includes("código 0") ? "var(--text-muted)" : "var(--danger)";
-                    output.innerHTML += `\n<span style='color: ${color}'>${msg.data}</span>`;
-                    output.scrollTop = output.scrollHeight;
-                    finalizarEjecucion();
-                }
-            };
+    if (ws) ws.close();
 
-            ws.onerror = (err) => {
-                output.innerHTML += "\n<span style='color: var(--danger)'>[Error crítico: No se pudo conectar. Verifica WS_URL y que el Space esté 'Running']</span>";
-                finalizarEjecucion();
-            };
+    ws = new WebSocket(WS_URL);
 
-            ws.onclose = () => {
-                ws = null;
-                if(runBtn.disabled) finalizarEjecucion(); // Si se cierra antes del mensaje de exit
-            };
-        });
+    ws.onopen = () => {
+        output.innerHTML += "<span style='color: var(--text-header)'>[Entorno listo. Compilando/Ejecutando Tesseract...]</span>\n\n";
+        stdin.disabled = false; stdin.focus();
 
-        function finalizarEjecucion(){
-            stdin.disabled = true;
-            runBtn.disabled = false;
-            runBtn.textContent = "► Ejecutar";
+        const payload = {
+            code: tesseractEditor.getValue(),
+            syntax: syntaxSelect.value,
+            target: targetSelect.value,
+            debug: debugCheck.checked
+        };
+        ws.send(JSON.stringify(payload));
+    };
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        
+        if (msg.type === 'stdout') {
+            output.textContent += msg.data;
+            output.scrollTop = output.scrollHeight;
+        } else if (msg.type === 'exit') {
+            const color = msg.data.includes("código 0") ? "var(--text-muted)" : "var(--danger)";
+            output.innerHTML += `\n<span style='color: ${color}'>${msg.data}</span>`;
+            output.scrollTop = output.scrollHeight;
+            finalizarEjecucion();
         }
+    };
 
-        // Manejo de stdin (entrada de usuario)
-        stdin.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && ws && ws.readyState === WebSocket.OPEN) {
-                const inputValue = stdin.value;
-                
-                // Eco visual en terminal negra (blanco)
-                output.textContent += inputValue + "\n";
-                output.scrollTop = output.scrollHeight;
+    ws.onerror = (err) => {
+        output.innerHTML += "\n<span style='color: var(--danger)'>[Error crítico: No se pudo conectar. Verifica tu WS_URL]</span>";
+        finalizarEjecucion();
+    };
 
-                // Enviar al backend vía JSON
-                ws.send(JSON.stringify({ type: 'stdin', data: inputValue }));
-                stdin.value = "";
-            }
-        });
+    ws.onclose = () => {
+        ws = null;
+        if(runBtn.disabled) finalizarEjecucion();
+    };
+});
+
+function finalizarEjecucion(){
+    stdin.disabled = true;
+    runBtn.disabled = false;
+    runBtn.textContent = "► Ejecutar";
+}
+
+stdin.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && ws && ws.readyState === WebSocket.OPEN) {
+        const inputValue = stdin.value;
+        output.textContent += inputValue + "\n";
+        output.scrollTop = output.scrollHeight;
+        ws.send(JSON.stringify({ type: 'stdin', data: inputValue }));
+        stdin.value = "";
+    }
+});
     </script>
 </body>
 </html>
