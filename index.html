@@ -459,7 +459,13 @@ runBtn.addEventListener('click', () => {
             target: targetSelect.value,
             debug: debugCheck.checked
         };
-        ws.send(JSON.stringify(payload));
+        
+        // Un pequeño delay de 250ms asegura que el proxy de HF haya ruteado el túnel por completo
+        setTimeout(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(payload));
+            }
+        }, 250);
     };
 
     ws.onmessage = (event) => {
@@ -483,7 +489,7 @@ runBtn.addEventListener('click', () => {
 
     ws.onclose = () => {
         ws = null;
-        if(runBtn.disabled) finalizarEjecucion();
+        finalizarEjecucion();
     };
 });
 
