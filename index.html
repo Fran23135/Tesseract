@@ -432,25 +432,41 @@ const targetSelect = document.getElementById('target');
 const debugCheck = document.getElementById('debugCheck');
 
 let ws = null;
+let isRunning = false; // Controla si hay un proceso activo
+
 function finalizarEjecucion() {
+    isRunning = false;
     runBtn.disabled = false;
-    runBtn.textContent = "▶ Run"; // O "▶ Ejecutar", pon el texto original de tu diseño
-    stdin.disabled = true;        // Deshabilitar la entrada ya que el proceso terminó
-} 
+    runBtn.textContent = "▶ Run"; // Vuelve a su estado original
+    stdin.disabled = true;
+}
+
 runBtn.addEventListener('click', () => {
     if (!tesseractEditor) return;
 
+    // CASO 1: Si ya está corriendo, el botón funciona como "PARAR"
+    if (isRunning) {
+        output.innerHTML += "\n<span style='color: var(--danger)'>[Ejecución cancelada por el usuario]</span>";
+        if (ws) ws.close(); // Detiene el WS, lo que activa el finally del backend y mata el proceso
+        return;
+    }
+
+    // CASO 2: Si está libre, inicia la ejecución normal
+    isRunning = true;
     output.innerHTML = "<span style='color: var(--text-header)'>[Conectando asíncronamente con Hugging Face...]</span>\n";
-    stdin.disabled = true; stdin.value = "";
-    runBtn.disabled = true; runBtn.textContent = "⏱ Corriendo";
+    stdin.disabled = true; 
+    stdin.value = "";
+    
+    runBtn.textContent = "🛑 Parar"; // Cambia el texto a Parar
+    runBtn.disabled = false;         // IMPORTANTE: Se queda habilitado para poder hacerle clic
 
     if (ws) ws.close();
-
     ws = new WebSocket(WS_URL);
 
     ws.onopen = () => {
         output.innerHTML += "<span style='color: var(--text-header)'>[Entorno listo. Compilando/Ejecutando Tesseract...]</span>\n\n";
-        stdin.disabled = false; stdin.focus();
+        stdin.disabled = false; 
+        stdin.focus();
 
         const payload = {
             code: tesseractEditor.getValue(),
@@ -476,8 +492,6 @@ runBtn.addEventListener('click', () => {
             const color = msg.data.includes("código 0") ? "var(--text-muted)" : "var(--danger)";
             output.innerHTML += `\n<span style='color: ${color}'>${msg.data}</span>`;
             output.scrollTop = output.scrollHeight;
-            
-            // CORRECCIÓN: Cerramos el socket limpiamente desde el cliente al terminar
             if (ws) ws.close(); 
         }
     };
@@ -487,7 +501,6 @@ runBtn.addEventListener('click', () => {
         finalizarEjecucion();
     };
 
-    // Este evento ahora se encarga de centralizar la limpieza del estado
     ws.onclose = () => {
         ws = null;
         finalizarEjecucion();
