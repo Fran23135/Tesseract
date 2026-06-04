@@ -52,7 +52,7 @@ def run_interactive_command(command, step_name):
         print(f"Salida de error (stderr):\n{e.stderr}")
         return False
 def main():
-    # 1. Verificar que se haya pasado un archivo de código fuente como argumento
+    # 1. Verificar que se haya pasado un archivo de código fuente como argumento 
     if len(sys.argv) < 2:
         print("Uso: python main.py <ruta_al_archivo_de_codigo>")
         sys.exit(1)
