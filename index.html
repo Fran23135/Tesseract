@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesseract Playground Pro</title>
+    <title>Tesseract Playground</title>
     <style>
         /* --- VARIABLES DE COLOR INTERFAZ (Basadas en tu TessLang Dark Modern) --- */
         :root {
@@ -140,8 +140,9 @@
         }
         .prompt { color: var(--text-terminal); margin-right: 10px; font-weight: bold; user-select: none;}
         #stdin {
-            flex: 1; background: transparent; border: none; color: #fff; outline: none;
+            flex: 1; background: transparent; border: none; color: var(--text-main); outline: none;
         }
+        #stdin::placeholder { color: var(--text-muted); }
         body.light-mode .terminal-container { border-color: var(--border-color); }
 
         /* Scrollbars */
@@ -149,6 +150,154 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* --- BOTÓN DE CONFIGURACIÓN DE ENTORNO --- */
+        .config-btn {
+            background-color: var(--bg-controls); color: var(--text-main);
+            border: 1px solid var(--border-color); padding: 8px 14px;
+            border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+        }
+        .config-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* --- PANEL DE EJEMPLOS --- */
+        .examples-pane {
+            flex: 0 0 220px; max-width: 220px;
+        }
+        .examples-pane .pane-title {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .examples-toggle {
+            display: none;
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 1rem; cursor: pointer; padding: 0 4px;
+        }
+        .examples-list {
+            flex: 1; overflow-y: auto; padding: 8px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .example-item {
+            background-color: transparent; color: var(--text-main);
+            border: 1px solid transparent; text-align: left;
+            padding: 9px 12px; border-radius: 8px; cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .example-item:hover { background-color: var(--bg-controls); }
+        .example-item.active {
+            background-color: var(--bg-controls); border-color: var(--accent);
+            color: var(--accent); font-weight: 600;
+        }
+        .example-item .example-desc {
+            display: block; font-size: 0.72rem; color: var(--text-muted);
+            font-weight: 400; margin-top: 2px;
+        }
+        .example-item.active .example-desc { color: var(--text-muted); }
+
+        /* Opciones deshabilitadas en los selects (modos web/nativo desactivados) */
+        select option:disabled { color: var(--text-muted); font-style: italic; }
+
+        /* --- MODAL DE CONFIGURACIÓN DE ENTORNO --- */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            background-color: rgba(0,0,0,0.55);
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background-color: var(--bg-panel); color: var(--text-main);
+            border: 1px solid var(--border-color); border-radius: 12px;
+            box-shadow: var(--shadow); width: 100%; max-width: 640px;
+            max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; background-color: var(--bg-header);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .modal-header h2 { font-size: 1.05rem; color: var(--text-header); font-weight: 600; }
+        .modal-subtitle {
+            font-size: 0.75rem; color: var(--text-muted); font-weight: 400;
+            font-family: 'Fira Code', monospace; margin-left: 6px;
+        }
+        .modal-close {
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+        }
+        .modal-close:hover { color: var(--danger); }
+        .modal-body { padding: 18px 20px; overflow-y: auto; }
+        .config-section {
+            border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 14px; margin-bottom: 14px; background-color: var(--bg-main);
+        }
+        .config-section-title { margin-bottom: 10px; }
+        .config-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        .config-field {
+            display: flex; flex-direction: column; gap: 4px;
+            font-size: 0.8rem; color: var(--text-muted);
+        }
+        .config-field em { font-style: normal; color: var(--text-muted); opacity: 0.8; font-size: 0.72rem; }
+        .config-field select, .config-field input[type="text"] {
+            background-color: var(--bg-controls); color: var(--text-main);
+            border: 1px solid var(--border-color); padding: 7px 10px;
+            border-radius: 6px; font-size: 0.85rem; outline: none;
+        }
+        .config-field-inline { grid-column: 1 / -1; }
+        .switch-row {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            font-size: 0.88rem; color: var(--text-main); user-select: none;
+        }
+        .switch-row input[type="checkbox"] {
+            cursor: pointer; accent-color: var(--accent); transform: scale(1.15);
+        }
+        .config-status {
+            font-size: 0.82rem; min-height: 18px; margin-top: 4px;
+        }
+        .config-status.ok { color: #4caf50; }
+        .config-status.error { color: var(--danger); }
+        .modal-footer {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 14px 20px; border-top: 1px solid var(--border-color);
+            background-color: var(--bg-header);
+        }
+        .secondary-btn {
+            background-color: transparent; color: var(--text-muted);
+            border: 1px solid var(--border-color); padding: 8px 16px;
+            border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+        }
+        .secondary-btn:hover { color: var(--text-main); border-color: var(--text-muted); }
+
+        /* --- RESPONSIVE / MÓVILES --- */
+        @media (max-width: 900px) {
+            .examples-pane { flex: 0 0 170px; max-width: 170px; }
+            .config-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 8px; }
+            header { padding: 10px 14px; }
+            h1 { font-size: 1.1rem; }
+            .header-right { gap: 8px; }
+            .controls { flex-wrap: wrap; }
+            select, button:not(.theme-toggle) { font-size: 0.8rem; padding: 7px 10px; }
+
+            .main-container { flex-direction: column; overflow-y: auto; }
+            .examples-pane {
+                flex: 0 0 auto; max-width: none; max-height: 46px; order: -1;
+                transition: max-height 0.25s ease;
+            }
+            .examples-pane.expanded { max-height: 260px; }
+            .examples-toggle { display: inline-block; }
+            .examples-list { flex-direction: row; flex-wrap: wrap; }
+            .example-item { flex: 0 0 auto; }
+
+            .pane { flex: none; min-height: 320px; }
+            .editor-container { min-height: 280px; }
+            .terminal-container { min-height: 260px; }
+
+            .modal-box { max-height: 95vh; }
+            .modal-header h2 { font-size: 0.95rem; }
+        }
     </style>
 
     <!-- Cargador de Monaco Editor -->
@@ -160,8 +309,11 @@
 <body>
 
     <header>
-        <h1>Tesseract Playground <span style="font-size: 0.8rem; opacity: 0.5;">Pro</span></h1>
+        <h1>Tesseract Playground</h1>
         <div class="header-right">
+            <!-- Botón de configuración de entorno (.tsc) -->
+            <button class="config-btn" id="configBtn" title="Configurar entorno (config.tsc)">⚙ Entorno</button>
+
             <!-- Selector de Tema -->
             <div class="theme-switch-wrapper">
                 <span>🌙</span>
@@ -194,6 +346,14 @@
     </header>
 
     <div class="main-container">
+        <div class="pane examples-pane" id="examplesPane">
+            <div class="pane-title">
+                Ejemplos
+                <button class="examples-toggle" id="examplesToggle" title="Mostrar/ocultar ejemplos">☰</button>
+            </div>
+            <div class="examples-list" id="examplesList"></div>
+        </div>
+
         <div class="pane">
             <div class="pane-title">Código fuente (.tss)</div>
             <div id="monaco-editor" class="editor-container"></div>
@@ -211,9 +371,143 @@
         </div>
     </div>
 
+    <!-- ================================================================= -->
+    <!-- MODAL: CONFIGURACIÓN DE ENTORNO (config.tsc)                      -->
+    <!-- ================================================================= -->
+    <div class="modal-overlay" id="configOverlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Configuración de entorno <span class="modal-subtitle">config.tsc</span></h2>
+                <button class="modal-close" id="configClose">✕</button>
+            </div>
+
+            <div class="modal-body" id="configBody">
+                <section class="config-section">
+                    <div class="config-section-title">
+                        <label class="switch-row">
+                            <input type="checkbox" id="cfgStrictEnabled">
+                            <span>strict-mode</span>
+                        </label>
+                    </div>
+                    <div class="config-grid">
+                        <label class="config-field">
+                            <span>Tipado — variables</span>
+                            <select id="cfgTypingVariables">
+                                <option value="only-static">only-static</option>
+                                <option value="only-dynamic">only-dynamic</option>
+                                <option value="free">free</option>
+                            </select>
+                        </label>
+                        <label class="config-field">
+                            <span>Tipado — funciones</span>
+                            <select id="cfgTypingFunctions">
+                                <option value="only-static">only-static</option>
+                                <option value="only-dynamic">only-dynamic</option>
+                                <option value="free">free</option>
+                            </select>
+                        </label>
+                        <label class="config-field">
+                            <span>Tipado — parámetros</span>
+                            <select id="cfgTypingParameters">
+                                <option value="only-static">only-static</option>
+                                <option value="only-dynamic">only-dynamic</option>
+                                <option value="free">free</option>
+                            </select>
+                        </label>
+                        <label class="config-field">
+                            <span>only-block</span>
+                            <select id="cfgOnlyBlock">
+                                <option value="null">Sin restricción</option>
+                                <option value="brace">brace</option>
+                                <option value="indent">indent</option>
+                            </select>
+                        </label>
+                        <label class="config-field">
+                            <span>execution_mode</span>
+                            <select id="cfgExecutionMode">
+                                <option value="free">free</option>
+                                <option value="compiled">compiled</option>
+                                <option value="interpreter">interpreter</option>
+                                <option value="web">web</option>
+                            </select>
+                        </label>
+                        <label class="switch-row config-field-inline">
+                            <input type="checkbox" id="cfgEntryPointStrict">
+                            <span>entry_point-strict (requiere función -&gt; main)</span>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <div class="config-section-title">
+                        <label class="switch-row">
+                            <input type="checkbox" id="cfgBlockEnabled">
+                            <span>block-config (bloques con delimitadores personalizados)</span>
+                        </label>
+                    </div>
+                    <div class="config-grid">
+                        <label class="config-field">
+                            <span>pb_start <em>(máx. 8 caracteres)</em></span>
+                            <input type="text" id="cfgPbStart" maxlength="8" placeholder="begin">
+                        </label>
+                        <label class="config-field">
+                            <span>pb_end <em>(máx. 8 caracteres)</em></span>
+                            <input type="text" id="cfgPbEnd" maxlength="8" placeholder="end">
+                        </label>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <div class="config-section-title">
+                        <label class="switch-row">
+                            <input type="checkbox" id="cfgTransformEnabled">
+                            <span>transform-code (transformar estilo de bloques)</span>
+                        </label>
+                    </div>
+                    <div class="config-grid">
+                        <label class="switch-row config-field-inline">
+                            <input type="checkbox" id="cfgTransformMutable">
+                            <span>mutable (mutar el archivo original, --mut)</span>
+                        </label>
+                        <label class="config-field">
+                            <span>target</span>
+                            <select id="cfgTransformTarget">
+                                <option value="brace">brace</option>
+                                <option value="indent">indent</option>
+                            </select>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <label class="switch-row">
+                        <input type="checkbox" id="cfgAllowCliOverride">
+                        <span>allow-cli-override (los flags de CLI pueden sobreescribir esta config)</span>
+                    </label>
+                </section>
+
+                <div class="config-status" id="configStatus"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="secondary-btn" id="configReset">Restaurar modo libre</button>
+                <button class="run-btn" id="configSave">💾 Guardar configuración</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // === CONFIGURACIÓN DE TU BACKEND ===
 const WS_URL = "wss://Fran23135-Tesseractplayground.hf.space/ws";
+// URL HTTP derivada del WS_URL, usada para /config (GET y POST)
+const HTTP_URL = WS_URL.replace(/^ws/, 'http').replace(/\/ws\/?$/, '');
+
+// === INTERRUPTORES DE MODOS (activar/desactivar en el desplegable) ===
+// Por ahora los modos "web" y "native" no funcionan en el backend,
+// así que se desactivan aquí con estas variables. Cambia a `true`
+// cuando estén listos y volverán a aparecer habilitados en el selector.
+const ENABLE_WEB_MODE = false;
+const ENABLE_NATIVE_MODE = false;
 
 let tesseractEditor = null;
 
@@ -357,40 +651,89 @@ require(['vs/editor/editor.main'], function() {
         }
     });
 
-    // Código de prueba inicial cargado en el Playground
-    const initialCode = [
-        '// Demo de Tesseract con soporte nativo de tu extensión',
-        'var nombre;',
-        'const int limite = 18;',
-        'var edad;',
-        '',
-        'print("Ingresa tu nombre: ");',
-        'read(nombre);',
-        '',
-        'print("Ingresa tu edad: ");',
-        'read(edad,int);',
-        '',
-        'print("");',
-        'print("--- RESUMEN ---");',
-        'print("Hola " . nombre . ", tienes " . edad . " años.");',
-        '',
-        'if (edad >= limite) {',
-        '    print("Acceso concedido de forma nativa.\\n");',
-        '} else {',
-        '    print("Eres menor de edad.");',
-        '}',
-        '',
-        'print("\\nProbando scroll del output:");',
-        'var i = 0;',
-        'while(i < 30){',
-        '    print("Línea de salida número: " . i);',
-        '    i = i + 1;',
-        '}'
-    ].join('\n');
+    // ==========================================================================
+    // EJEMPLOS DEL PLAYGROUND (panel izquierdo)
+    // ==========================================================================
+    // Agrega aquí más ejemplos según los necesites: { title, desc, code }.
+    window.tesseractExamples = [
+        {
+            title: 'Demo completo',
+            desc: 'Variables, tipado, condicionales y bucles',
+            code: [
+                '// Demo de Tesseract con soporte nativo de tu extensión',
+                'var nombre;',
+                'const int limite = 18;',
+                'var edad;',
+                '',
+                'print("Ingresa tu nombre: ");',
+                'read(nombre);',
+                '',
+                'print("Ingresa tu edad: ");',
+                'read(edad,int);',
+                '',
+                'print("");',
+                'print("--- RESUMEN ---");',
+                'print("Hola " . nombre . ", tienes " . edad . " años.");',
+                '',
+                'if (edad >= limite) {',
+                '    print("Acceso concedido de forma nativa.\\n");',
+                '} else {',
+                '    print("Eres menor de edad.");',
+                '}',
+                '',
+                'print("\\nProbando scroll del output:");',
+                'var i = 0;',
+                'while(i < 30){',
+                '    print("Línea de salida número: " . i);',
+                '    i = i + 1;',
+                '}'
+            ].join('\n')
+        },
+        {
+            title: 'Variables y tipado',
+            desc: 'Declaración estática vs dinámica',
+            code: [
+                '// Ejemplo: variables y tipado',
+                '',
+            ].join('\n')
+        },
+        {
+            title: 'Condicionales',
+            desc: 'if / else',
+            code: [
+                '// Ejemplo: condicionales',
+                '',
+            ].join('\n')
+        },
+        {
+            title: 'Bucles',
+            desc: 'while / for',
+            code: [
+                '// Ejemplo: bucles',
+                '',
+            ].join('\n')
+        },
+        {
+            title: 'Funciones',
+            desc: 'function ... return',
+            code: [
+                '// Ejemplo: funciones',
+                '',
+            ].join('\n')
+        },
+        {
+            title: 'Arrays y colecciones',
+            desc: 'array, tuple, dict',
+            code: [
+                '// Ejemplo: arrays y colecciones',
+                '',
+            ].join('\n')
+        }
+    ];
 
     const isLight = document.body.classList.contains('light-mode');
     tesseractEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
-        value: initialCode,
+        value: window.tesseractExamples[0].code,
         language: 'tesseract',
         theme: isLight ? 'tesseract-light' : 'tesslang-dark-modern',
         automaticLayout: true,
@@ -422,6 +765,206 @@ toggleSwitch.addEventListener('change', (e) => {
         if (monaco.editor) monaco.editor.setTheme('tesslang-dark-modern');
     }
 });
+
+// === PANEL DE EJEMPLOS ===
+const examplesList = document.getElementById('examplesList');
+const examplesPane = document.getElementById('examplesPane');
+const examplesToggle = document.getElementById('examplesToggle');
+
+function renderExamples() {
+    examplesList.innerHTML = '';
+    window.tesseractExamples.forEach((ex, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'example-item' + (idx === 0 ? ' active' : '');
+        btn.innerHTML = `${ex.title}<span class="example-desc">${ex.desc || ''}</span>`;
+        btn.addEventListener('click', () => {
+            if (!tesseractEditor) return;
+            tesseractEditor.setValue(ex.code);
+            document.querySelectorAll('.example-item').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            // En móvil, al elegir un ejemplo se contrae el panel de nuevo
+            examplesPane.classList.remove('expanded');
+        });
+        examplesList.appendChild(btn);
+    });
+}
+renderExamples();
+
+if (examplesToggle) {
+    examplesToggle.addEventListener('click', () => {
+        examplesPane.classList.toggle('expanded');
+    });
+}
+
+// === ACTIVAR / DESACTIVAR MODOS WEB Y NATIVO EN EL SELECTOR ===
+(function applyModeSwitches() {
+    const select = document.getElementById('target');
+    if (!select) return;
+    const optNative = select.querySelector('option[value="native"]');
+    const optWeb = select.querySelector('option[value="web"]');
+
+    if (optNative && !ENABLE_NATIVE_MODE) {
+        optNative.disabled = true;
+        optNative.textContent = 'Modo: Nativo (LLVM) — deshabilitado';
+    }
+    if (optWeb && !ENABLE_WEB_MODE) {
+        optWeb.disabled = true;
+        optWeb.textContent = 'Modo: Web (JS) — deshabilitado';
+    }
+    // Si el valor seleccionado por defecto quedó deshabilitado, forzamos "interp"
+    if (select.options[select.selectedIndex] && select.options[select.selectedIndex].disabled) {
+        select.value = 'interp';
+    }
+})();
+
+// === MODAL DE CONFIGURACIÓN DE ENTORNO (config.tsc) ===
+(function setupConfigModal() {
+    const configBtn = document.getElementById('configBtn');
+    const overlay = document.getElementById('configOverlay');
+    const closeBtn = document.getElementById('configClose');
+    const saveBtn = document.getElementById('configSave');
+    const resetBtn = document.getElementById('configReset');
+    const statusEl = document.getElementById('configStatus');
+
+    const fields = {
+        strictEnabled: document.getElementById('cfgStrictEnabled'),
+        typingVariables: document.getElementById('cfgTypingVariables'),
+        typingFunctions: document.getElementById('cfgTypingFunctions'),
+        typingParameters: document.getElementById('cfgTypingParameters'),
+        onlyBlock: document.getElementById('cfgOnlyBlock'),
+        entryPointStrict: document.getElementById('cfgEntryPointStrict'),
+        executionMode: document.getElementById('cfgExecutionMode'),
+        blockEnabled: document.getElementById('cfgBlockEnabled'),
+        pbStart: document.getElementById('cfgPbStart'),
+        pbEnd: document.getElementById('cfgPbEnd'),
+        transformEnabled: document.getElementById('cfgTransformEnabled'),
+        transformMutable: document.getElementById('cfgTransformMutable'),
+        transformTarget: document.getElementById('cfgTransformTarget'),
+        allowCliOverride: document.getElementById('cfgAllowCliOverride'),
+    };
+
+    const PB_MAX_LEN = 8; // límite de caracteres para delimitadores personalizados
+
+    function defaultConfig() {
+        return {
+            strict_mode: {
+                enabled: false,
+                typing: { variables: 'free', functions: 'free', parameters: 'free' },
+                only_block: null,
+                entry_point_strict: false,
+                execution_mode: 'free'
+            },
+            block_config: { enabled: false, pb_start: 'begin', pb_end: 'end' },
+            transform_code: { enabled: false, mutable: false, target: 'brace' },
+            allow_cli_override: true
+        };
+    }
+
+    function fillForm(cfg) {
+        const sm = cfg.strict_mode || {};
+        const typing = sm.typing || {};
+        const bc = cfg.block_config || {};
+        const tc = cfg.transform_code || {};
+
+        fields.strictEnabled.checked = !!sm.enabled;
+        fields.typingVariables.value = typing.variables || 'free';
+        fields.typingFunctions.value = typing.functions || 'free';
+        fields.typingParameters.value = typing.parameters || 'free';
+        fields.onlyBlock.value = sm.only_block || 'null';
+        fields.entryPointStrict.checked = !!sm.entry_point_strict;
+        fields.executionMode.value = sm.execution_mode || 'free';
+
+        fields.blockEnabled.checked = !!bc.enabled;
+        fields.pbStart.value = bc.pb_start || 'begin';
+        fields.pbEnd.value = bc.pb_end || 'end';
+
+        fields.transformEnabled.checked = !!tc.enabled;
+        fields.transformMutable.checked = !!tc.mutable;
+        fields.transformTarget.value = tc.target || 'brace';
+
+        fields.allowCliOverride.checked = cfg.allow_cli_override !== false;
+    }
+
+    function readForm() {
+        return {
+            strict_mode: {
+                enabled: fields.strictEnabled.checked,
+                typing: {
+                    variables: fields.typingVariables.value,
+                    functions: fields.typingFunctions.value,
+                    parameters: fields.typingParameters.value,
+                },
+                only_block: fields.onlyBlock.value === 'null' ? null : fields.onlyBlock.value,
+                entry_point_strict: fields.entryPointStrict.checked,
+                execution_mode: fields.executionMode.value,
+            },
+            block_config: {
+                enabled: fields.blockEnabled.checked,
+                pb_start: fields.pbStart.value.slice(0, PB_MAX_LEN),
+                pb_end: fields.pbEnd.value.slice(0, PB_MAX_LEN),
+            },
+            transform_code: {
+                enabled: fields.transformEnabled.checked,
+                mutable: fields.transformMutable.checked,
+                target: fields.transformTarget.value,
+            },
+            allow_cli_override: fields.allowCliOverride.checked,
+        };
+    }
+
+    function setStatus(msg, type) {
+        statusEl.textContent = msg || '';
+        statusEl.className = 'config-status' + (type ? ' ' + type : '');
+    }
+
+    async function loadConfig() {
+        setStatus('Cargando configuración...', '');
+        try {
+            const res = await fetch(`${HTTP_URL}/config`);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const cfg = await res.json();
+            fillForm(cfg);
+            setStatus('', '');
+        } catch (err) {
+            fillForm(defaultConfig());
+            setStatus('No se pudo cargar desde el servidor, mostrando modo libre por defecto.', 'error');
+        }
+    }
+
+    async function saveConfig() {
+        const cfg = readForm();
+
+        if (cfg.block_config.pb_start.length > PB_MAX_LEN || cfg.block_config.pb_end.length > PB_MAX_LEN) {
+            setStatus(`Los delimitadores no pueden superar ${PB_MAX_LEN} caracteres.`, 'error');
+            return;
+        }
+
+        setStatus('Guardando...', '');
+        try {
+            const res = await fetch(`${HTTP_URL}/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cfg)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al guardar');
+            setStatus('✔ Configuración guardada en config.tsc', 'ok');
+        } catch (err) {
+            setStatus('✖ ' + err.message, 'error');
+        }
+    }
+
+    if (configBtn) {
+        configBtn.addEventListener('click', () => {
+            overlay.classList.add('open');
+            loadConfig();
+        });
+    }
+    if (closeBtn) closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+    if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+    if (saveBtn) saveBtn.addEventListener('click', saveConfig);
+    if (resetBtn) resetBtn.addEventListener('click', () => { fillForm(defaultConfig()); setStatus('Formulario restaurado a modo libre (aún no guardado).', ''); });
+})();
 
 // === LÓGICA DE WEBSOCKETS ===
 const output = document.getElementById('output');
