@@ -520,80 +520,73 @@ let tesseractEditor = null;
 // ==========================================================================
 // Se definen aquí, fuera del loader de Monaco, para que estén disponibles
 // de inmediato (Monaco carga de forma asíncrona y tarda más en estar listo).
-// Agrega aquí más ejemplos según los necesites: { title, desc, code }.
+//
+// Para agregar un ejemplo nuevo, copia un bloque { title, desc, code: `...` }
+// y escribe el código TAL CUAL entre los backticks (` `), en varias líneas,
+// sin necesidad de comillas por línea. Los espacios y saltos de línea se
+// respetan exactamente como los escribas.
 window.tesseractExamples = [
     {
         title: 'Demo completo',
         desc: 'Variables, tipado, condicionales y bucles',
-        code: [
-            '// Demo de Tesseract',
-            'var nombre;',
-            'const int limite = 18;',
-            'var edad;',
-            '',
-            'print("Ingresa tu nombre: ");',
-            'read(nombre);',
-            '',
-            'print("Ingresa tu edad: ");',
-            'read(edad,int);',
-            '',
-            'print("");',
-            'print("--- RESUMEN ---");',
-            'print("Hola " . nombre . ", tienes " . edad . " años.");',
-            '',
-            'if (edad >= limite) {',
-            '    print("Acceso concedido de forma nativa.\\n");',
-            '} else {',
-            '    print("Eres menor de edad.");',
-            '}',
-            '',
-            'print("\\nProbando scroll del output:");',
-            'var i = 0;',
-            'while(i < 30){',
-            '    print("Línea de salida número: " . i);',
-            '    i = i + 1;',
-            '}'
-        ].join('\n')
+        code: `// Demo de Tesseract con soporte nativo de tu extensión
+var nombre;
+const int limite = 18;
+var edad;
+
+print("Ingresa tu nombre: ");
+read(nombre);
+
+print("Ingresa tu edad: ");
+read(edad,int);
+
+print("");
+print("--- RESUMEN ---");
+print("Hola " . nombre . ", tienes " . edad . " años.");
+print("Interpolación: hola soy #(nombre), tengo #(edad) años.");
+
+if (edad >= limite) {
+    print("Acceso concedido de forma nativa.\\n");
+} else {
+    print("Eres menor de edad.");
+}
+
+print("\\nProbando scroll del output:");
+var i = 0;
+while(i < 30){
+    print("Línea de salida número: " . i);
+    i = i + 1;
+}`
     },
     {
         title: 'Variables y tipado',
         desc: 'Declaración estática vs dinámica',
-        code: [
-            '// Ejemplo: variables y tipado',
-            '',
-        ].join('\n')
+        code: `// Ejemplo: variables y tipado
+`
     },
     {
         title: 'Condicionales',
         desc: 'if / else',
-        code: [
-            '// Ejemplo: condicionales',
-            '',
-        ].join('\n')
+        code: `// Ejemplo: condicionales
+`
     },
     {
         title: 'Bucles',
         desc: 'while / for',
-        code: [
-            '// Ejemplo: bucles',
-            '',
-        ].join('\n')
+        code: `// Ejemplo: bucles
+`
     },
     {
         title: 'Funciones',
         desc: 'function ... return',
-        code: [
-            '// Ejemplo: funciones',
-            '',
-        ].join('\n')
+        code: `// Ejemplo: funciones
+`
     },
     {
         title: 'Arrays y colecciones',
         desc: 'array, tuple, dict',
-        code: [
-            '// Ejemplo: arrays y colecciones',
-            '',
-        ].join('\n')
+        code: `// Ejemplo: arrays y colecciones
+`
     }
 ];
 
@@ -602,6 +595,27 @@ require(['vs/editor/editor.main'], function() {
     
     // 1. Registrar identificador del lenguaje
     monaco.languages.register({ id: 'tesseract' });
+
+    // Configuración de lenguaje: pares de brackets para auto-cierre y para
+    // que Monaco pueda aplicar el coloreado por nivel de anidación (como en VSCode)
+    monaco.languages.setLanguageConfiguration('tesseract', {
+        comments: { lineComment: '//', blockComment: ['/*', '*/'] },
+        brackets: [['{', '}'], ['[', ']'], ['(', ')']],
+        autoClosingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" }
+        ],
+        surroundingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" }
+        ]
+    });
 
     // 2. TOKENIZER MONARCH DEFINITIVO (Orden de prioridad corregido según tu .tmLanguage.json)
     monaco.languages.setMonarchTokensProvider('tesseract', {
@@ -641,7 +655,12 @@ require(['vs/editor/editor.main'], function() {
 
                 // 6. NÚMEROS Y OPERADORES
                 [/\b\d+(\.\d+)?\b/, 'constant.numeric'],
-                [/(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!\.])/, 'keyword.operator']
+                [/(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!\.])/, 'keyword.operator'],
+
+                // 7. BRACKETS (para el coloreado por nivel de anidación de Monaco)
+                [/[{}]/, 'delimiter.curly'],
+                [/[\[\]]/, 'delimiter.square'],
+                [/[()]/, 'delimiter.parenthesis']
             ],
 
             // Estado intermedio para procesar la línea de importación hasta el salto de línea ($)
@@ -653,15 +672,63 @@ require(['vs/editor/editor.main'], function() {
             ],
 
             // Sub-estados de strings para procesar caracteres de escape (constant.character.escape)
+            // y la interpolación #( expresión ), que se sale del modo "string" para tokenizar
+            // el contenido como código normal (identificadores, funciones, números, operadores).
             stringDouble: [
-                [/[^\\"]+/, 'string.quoted.double'],
+                [/#\(/, { token: 'delimiter.interpolation', next: '@interpolation' }],
+                [/[^\\"#]+/, 'string.quoted.double'],
                 [/\\./, 'constant.character.escape'],
+                [/#/, 'string.quoted.double'],
                 [/"/, { token: 'string.quoted.double', next: '@pop' }]
             ],
             stringSimple: [
-                [/[^\\']+/, 'string.quoted.simple'],
+                [/#\(/, { token: 'delimiter.interpolation', next: '@interpolation' }],
+                [/[^\\'#]+/, 'string.quoted.simple'],
                 [/\\./, 'constant.character.escape'],
+                [/#/, 'string.quoted.simple'],
                 [/'/, { token: 'string.quoted.simple', next: '@pop' }]
+            ],
+
+            // Contenido de una interpolación #( ... ): se tokeniza como código normal
+            // (blanco/plano, no como string). Los "(" reales (ej. llamadas a función
+            // dentro de la interpolación) abren un nivel aparte para no confundirse
+            // con el "(" de apertura de la propia interpolación.
+            interpolation: [
+                [/\(/, { token: 'delimiter.parenthesis', next: '@interpParen' }],
+                [/\)/, { token: 'delimiter.interpolation', next: '@pop' }],
+                [/\b[a-zA-Z_]\w*(?=\s*\()/, 'entity.name.function'],
+                [/[a-zA-Z_]\w*/, {
+                    cases: {
+                        '@keywordsControl': 'keyword.control',
+                        '@storageTypes': 'storage.type',
+                        '@supportFunctions': 'support.function',
+                        '@default': 'identifier'
+                    }
+                }],
+                [/\b\d+(\.\d+)?\b/, 'constant.numeric'],
+                [/(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!\.,])/, 'keyword.operator'],
+                [/"/, { token: 'string.quoted.double', next: '@stringDouble' }],
+                [/'/, { token: 'string.quoted.simple', next: '@stringSimple' }]
+            ],
+
+            // Paréntesis "reales" dentro de una interpolación (ej. llamadas a función).
+            // Al cerrar, vuelve al nivel de interpolación (o a otro interpParen anidado).
+            interpParen: [
+                [/\(/, { token: 'delimiter.parenthesis', next: '@interpParen' }],
+                [/\)/, { token: 'delimiter.parenthesis', next: '@pop' }],
+                [/\b[a-zA-Z_]\w*(?=\s*\()/, 'entity.name.function'],
+                [/[a-zA-Z_]\w*/, {
+                    cases: {
+                        '@keywordsControl': 'keyword.control',
+                        '@storageTypes': 'storage.type',
+                        '@supportFunctions': 'support.function',
+                        '@default': 'identifier'
+                    }
+                }],
+                [/\b\d+(\.\d+)?\b/, 'constant.numeric'],
+                [/(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!\.,])/, 'keyword.operator'],
+                [/"/, { token: 'string.quoted.double', next: '@stringDouble' }],
+                [/'/, { token: 'string.quoted.simple', next: '@stringSimple' }]
             ],
 
             // Comentarios de bloque
@@ -686,6 +753,7 @@ require(['vs/editor/editor.main'], function() {
             { token: 'entity.name.function', foreground: 'DCDCAA' },
             { token: 'string.quoted.double', foreground: 'CE9178' },
             { token: 'string.quoted.simple', foreground: 'CE9178' },
+            { token: 'delimiter.interpolation', foreground: 'FF9E64', fontStyle: 'bold' },
             { token: 'constant.character.escape', foreground: 'D7BA7D' },
             { token: 'constant.numeric', foreground: 'B5CEA8' },
             { token: 'keyword.operator', foreground: 'D4D4D4' },
@@ -718,6 +786,7 @@ require(['vs/editor/editor.main'], function() {
             { token: 'entity.name.function', foreground: '745300' },             // Ocre/marrón técnico
             { token: 'string.quoted.double', foreground: 'A31515' },             // Rojo ladrillo clásico
             { token: 'string.quoted.simple', foreground: 'A31515' },             // Rojo ladrillo clásico
+            { token: 'delimiter.interpolation', foreground: 'C2410C', fontStyle: 'bold' }, // Naranja quemado
             { token: 'constant.character.escape', foreground: '0000FF' },        // Azul eléctrico
             { token: 'constant.numeric', foreground: '098658' },                 // Verde esmeralda oscuro
             { token: 'keyword.operator', foreground: '333333' },                 // Gris oscuro para operadores
@@ -747,7 +816,9 @@ require(['vs/editor/editor.main'], function() {
         fontFamily: "'Fira Code', 'Consolas', monospace",
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
-        renderLineHighlight: 'all'
+        renderLineHighlight: 'all',
+        bracketPairColorization: { enabled: true },
+        guides: { bracketPairs: true }
     });
 });
 
