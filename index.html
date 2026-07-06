@@ -515,6 +515,88 @@ const ENABLE_NATIVE_MODE = false;
 
 let tesseractEditor = null;
 
+// ==========================================================================
+// EJEMPLOS DEL PLAYGROUND (panel izquierdo)
+// ==========================================================================
+// Se definen aquí, fuera del loader de Monaco, para que estén disponibles
+// de inmediato (Monaco carga de forma asíncrona y tarda más en estar listo).
+// Agrega aquí más ejemplos según los necesites: { title, desc, code }.
+window.tesseractExamples = [
+    {
+        title: 'Demo completo',
+        desc: 'Variables, tipado, condicionales y bucles',
+        code: [
+            '// Demo de Tesseract',
+            'var nombre;',
+            'const int limite = 18;',
+            'var edad;',
+            '',
+            'print("Ingresa tu nombre: ");',
+            'read(nombre);',
+            '',
+            'print("Ingresa tu edad: ");',
+            'read(edad,int);',
+            '',
+            'print("");',
+            'print("--- RESUMEN ---");',
+            'print("Hola " . nombre . ", tienes " . edad . " años.");',
+            '',
+            'if (edad >= limite) {',
+            '    print("Acceso concedido de forma nativa.\\n");',
+            '} else {',
+            '    print("Eres menor de edad.");',
+            '}',
+            '',
+            'print("\\nProbando scroll del output:");',
+            'var i = 0;',
+            'while(i < 30){',
+            '    print("Línea de salida número: " . i);',
+            '    i = i + 1;',
+            '}'
+        ].join('\n')
+    },
+    {
+        title: 'Variables y tipado',
+        desc: 'Declaración estática vs dinámica',
+        code: [
+            '// Ejemplo: variables y tipado',
+            '',
+        ].join('\n')
+    },
+    {
+        title: 'Condicionales',
+        desc: 'if / else',
+        code: [
+            '// Ejemplo: condicionales',
+            '',
+        ].join('\n')
+    },
+    {
+        title: 'Bucles',
+        desc: 'while / for',
+        code: [
+            '// Ejemplo: bucles',
+            '',
+        ].join('\n')
+    },
+    {
+        title: 'Funciones',
+        desc: 'function ... return',
+        code: [
+            '// Ejemplo: funciones',
+            '',
+        ].join('\n')
+    },
+    {
+        title: 'Arrays y colecciones',
+        desc: 'array, tuple, dict',
+        code: [
+            '// Ejemplo: arrays y colecciones',
+            '',
+        ].join('\n')
+    }
+];
+
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
 require(['vs/editor/editor.main'], function() {
     
@@ -654,86 +736,6 @@ require(['vs/editor/editor.main'], function() {
             'editorIndentGuide.background1': '#E1E4E8'              // Guías de indentación limpias
         }
     });
-
-    // ==========================================================================
-    // EJEMPLOS DEL PLAYGROUND (panel izquierdo)
-    // ==========================================================================
-    // Agrega aquí más ejemplos según los necesites: { title, desc, code }.
-    window.tesseractExamples = [
-        {
-            title: 'Demo completo',
-            desc: 'Variables, tipado, condicionales y bucles',
-            code: [
-                '// Demo de Tesseract con soporte nativo de tu extensión',
-                'var nombre;',
-                'const int limite = 18;',
-                'var edad;',
-                '',
-                'print("Ingresa tu nombre: ");',
-                'read(nombre);',
-                '',
-                'print("Ingresa tu edad: ");',
-                'read(edad,int);',
-                '',
-                'print("");',
-                'print("--- RESUMEN ---");',
-                'print("Hola " . nombre . ", tienes " . edad . " años.");',
-                '',
-                'if (edad >= limite) {',
-                '    print("Acceso concedido de forma nativa.\\n");',
-                '} else {',
-                '    print("Eres menor de edad.");',
-                '}',
-                '',
-                'print("\\nProbando scroll del output:");',
-                'var i = 0;',
-                'while(i < 30){',
-                '    print("Línea de salida número: " . i);',
-                '    i = i + 1;',
-                '}'
-            ].join('\n')
-        },
-        {
-            title: 'Variables y tipado',
-            desc: 'Declaración estática vs dinámica',
-            code: [
-                '// Ejemplo: variables y tipado',
-                '',
-            ].join('\n')
-        },
-        {
-            title: 'Condicionales',
-            desc: 'if / else',
-            code: [
-                '// Ejemplo: condicionales',
-                '',
-            ].join('\n')
-        },
-        {
-            title: 'Bucles',
-            desc: 'while / for',
-            code: [
-                '// Ejemplo: bucles',
-                '',
-            ].join('\n')
-        },
-        {
-            title: 'Funciones',
-            desc: 'function ... return',
-            code: [
-                '// Ejemplo: funciones',
-                '',
-            ].join('\n')
-        },
-        {
-            title: 'Arrays y colecciones',
-            desc: 'array, tuple, dict',
-            code: [
-                '// Ejemplo: arrays y colecciones',
-                '',
-            ].join('\n')
-        }
-    ];
 
     const isLight = document.body.classList.contains('light-mode');
     tesseractEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
