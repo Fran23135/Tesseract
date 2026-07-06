@@ -162,19 +162,24 @@
         /* --- PANEL DE EJEMPLOS --- */
         .examples-pane {
             flex: 0 0 220px; max-width: 220px;
+            transition: flex-basis 0.25s ease, max-width 0.25s ease;
         }
+        .examples-pane.collapsed { flex: 0 0 52px; max-width: 52px; }
         .examples-pane .pane-title {
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
         }
+        .examples-pane.collapsed .pane-title .pane-title-text { display: none; }
         .examples-toggle {
-            display: none;
             background: transparent; border: none; color: var(--text-muted);
-            font-size: 1rem; cursor: pointer; padding: 0 4px;
+            font-size: 1rem; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+            flex-shrink: 0;
         }
+        .examples-toggle:hover { color: var(--accent); }
         .examples-list {
             flex: 1; overflow-y: auto; padding: 8px;
             display: flex; flex-direction: column; gap: 6px;
         }
+        .examples-pane.collapsed .examples-list { display: none; }
         .example-item {
             background-color: transparent; color: var(--text-main);
             border: 1px solid transparent; text-align: left;
@@ -283,11 +288,10 @@
 
             .main-container { flex-direction: column; overflow-y: auto; }
             .examples-pane {
-                flex: 0 0 auto; max-width: none; max-height: 46px; order: -1;
+                flex: 0 0 auto; max-width: none; max-height: 260px; order: -1;
                 transition: max-height 0.25s ease;
             }
-            .examples-pane.expanded { max-height: 260px; }
-            .examples-toggle { display: inline-block; }
+            .examples-pane.collapsed { max-height: 48px; }
             .examples-list { flex-direction: row; flex-wrap: wrap; }
             .example-item { flex: 0 0 auto; }
 
@@ -348,7 +352,7 @@
     <div class="main-container">
         <div class="pane examples-pane" id="examplesPane">
             <div class="pane-title">
-                Ejemplos
+                <span class="pane-title-text">Ejemplos</span>
                 <button class="examples-toggle" id="examplesToggle" title="Mostrar/ocultar ejemplos">☰</button>
             </div>
             <div class="examples-list" id="examplesList"></div>
@@ -766,7 +770,7 @@ toggleSwitch.addEventListener('change', (e) => {
     }
 });
 
-// === PANEL DE EJEMPLOS ===
+// === PANEL DE EJEMPLOS (plegable/desplegable en cualquier pantalla) ===
 const examplesList = document.getElementById('examplesList');
 const examplesPane = document.getElementById('examplesPane');
 const examplesToggle = document.getElementById('examplesToggle');
@@ -782,17 +786,20 @@ function renderExamples() {
             tesseractEditor.setValue(ex.code);
             document.querySelectorAll('.example-item').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
-            // En móvil, al elegir un ejemplo se contrae el panel de nuevo
-            examplesPane.classList.remove('expanded');
         });
         examplesList.appendChild(btn);
     });
 }
 renderExamples();
 
+// En pantallas pequeñas arranca colapsado para no ocupar espacio del editor
+if (window.innerWidth <= 768 && examplesPane) {
+    examplesPane.classList.add('collapsed');
+}
+
 if (examplesToggle) {
     examplesToggle.addEventListener('click', () => {
-        examplesPane.classList.toggle('expanded');
+        examplesPane.classList.toggle('collapsed');
     });
 }
 
@@ -924,10 +931,14 @@ if (examplesToggle) {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const cfg = await res.json();
             fillForm(cfg);
-            setStatus('', '');
+            if (cfg._exists === false) {
+                setStatus('Aún no existe config.tsc en el entorno (se genera solo al ejecutar el intérprete). Mostrando modo libre por defecto.', '');
+            } else {
+                setStatus('', '');
+            }
         } catch (err) {
             fillForm(defaultConfig());
-            setStatus('No se pudo cargar desde el servidor, mostrando modo libre por defecto.', 'error');
+            setStatus('No se pudo contactar al servidor. Mostrando modo libre por defecto.', 'error');
         }
     }
 
