@@ -503,8 +503,6 @@
     <script>
         // === CONFIGURACIÓN DE TU BACKEND ===
 const WS_URL = "wss://Fran23135-Tesseractplayground.hf.space/ws";
-// URL HTTP derivada del WS_URL, usada para /config (GET y POST)
-const HTTP_URL = WS_URL.replace(/^ws/, 'http').replace(/\/ws\/?$/, '');
 
 // === INTERRUPTORES DE MODOS (activar/desactivar en el desplegable) ===
 // Por ahora los modos "web" y "native" no funcionan en el backend,
@@ -898,6 +896,13 @@ if (examplesToggle) {
 })();
 
 // === MODAL DE CONFIGURACIÓN DE ENTORNO (config.tsc) ===
+// IMPORTANTE: esta configuración ya NO se guarda de forma permanente en el
+// servidor. Vive únicamente en memoria de esta pestaña (window.tesseractEnvConfig),
+// así que un F5 la resetea. Se envía junto con el código cada vez que le das
+// a "Ejecutar", se aplica SOLO para esa ejecución, y el backend la resetea a
+// modo libre apenas termina — así nadie hereda la configuración de otro.
+window.tesseractEnvConfig = null; // null = modo libre (default)
+
 (function setupConfigModal() {
     const configBtn = document.getElementById('configBtn');
     const overlay = document.getElementById('configOverlay');
@@ -997,25 +1002,15 @@ if (examplesToggle) {
         statusEl.className = 'config-status' + (type ? ' ' + type : '');
     }
 
-    async function loadConfig() {
-        setStatus('Cargando configuración...', '');
-        try {
-            const res = await fetch(`${HTTP_URL}/config`);
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const cfg = await res.json();
-            fillForm(cfg);
-            if (cfg._exists === false) {
-                setStatus('Aún no existe config.tsc en el entorno (se genera solo al ejecutar el intérprete). Mostrando modo libre por defecto.', '');
-            } else {
-                setStatus('', '');
-            }
-        } catch (err) {
-            fillForm(defaultConfig());
-            setStatus('No se pudo contactar al servidor. Mostrando modo libre por defecto.', 'error');
-        }
+    function openModal() {
+        overlay.classList.add('open');
+        // Se rellena con lo que ya tengas elegido en ESTA pestaña, o modo libre
+        // si todavía no has tocado nada (nunca se consulta al servidor).
+        fillForm(window.tesseractEnvConfig || defaultConfig());
+        setStatus('', '');
     }
 
-    async function saveConfig() {
+    function saveConfig() {
         const cfg = readForm();
 
         if (cfg.block_config.pb_start.length > PB_MAX_LEN || cfg.block_config.pb_end.length > PB_MAX_LEN) {
@@ -1023,31 +1018,20 @@ if (examplesToggle) {
             return;
         }
 
-        setStatus('Guardando...', '');
-        try {
-            const res = await fetch(`${HTTP_URL}/config`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(cfg)
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Error al guardar');
-            setStatus('✔ Configuración guardada en config.tsc', 'ok');
-        } catch (err) {
-            setStatus('✖ ' + err.message, 'error');
-        }
+        // Solo queda en memoria de esta pestaña, no se manda al servidor todavía.
+        window.tesseractEnvConfig = cfg;
+        setStatus('✔ Listo. Se aplicará en tu próxima ejecución (solo para ti — no se guarda para otros usuarios ni sobrevive a un F5).', 'ok');
     }
 
-    if (configBtn) {
-        configBtn.addEventListener('click', () => {
-            overlay.classList.add('open');
-            loadConfig();
-        });
-    }
+    if (configBtn) configBtn.addEventListener('click', openModal);
     if (closeBtn) closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
     if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
     if (saveBtn) saveBtn.addEventListener('click', saveConfig);
-    if (resetBtn) resetBtn.addEventListener('click', () => { fillForm(defaultConfig()); setStatus('Formulario restaurado a modo libre (aún no guardado).', ''); });
+    if (resetBtn) resetBtn.addEventListener('click', () => {
+        window.tesseractEnvConfig = null;
+        fillForm(defaultConfig());
+        setStatus('Restaurado a modo libre para tu próxima ejecución.', '');
+    });
 })();
 
 // === LÓGICA DE WEBSOCKETS ===
@@ -1099,7 +1083,11 @@ runBtn.addEventListener('click', () => {
             code: tesseractEditor.getValue(),
             syntax: syntaxSelect.value,
             target: targetSelect.value,
-            debug: debugCheck.checked
+            debug: debugCheck.checked,
+            // Configuración de entorno de ESTA pestaña (o null = modo libre).
+            // Se aplica solo para esta ejecución; el servidor la resetea a
+            // modo libre apenas termina.
+            config: window.tesseractEnvConfig || null
         };
         
         setTimeout(() => {
