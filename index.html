@@ -1,420 +1,1148 @@
-import os
-import json
-import subprocess
-import asyncio
-import shutil
-import stat
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Body
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesseract Playground</title>
+    <style>
+        /* --- VARIABLES DE COLOR INTERFAZ (Basadas en tu TessLang Dark Modern) --- */
+        :root {
+            --bg-main: #121212; 
+            --bg-panel: #1F1F1F; /* Tu color de fondo de editor */
+            --bg-header: #181818; /* Tu fondo de barras secundarias */
+            --bg-controls: #313131; /* Tu input background */
+            --bg-terminal: #000000;
+            --text-main: #CCCCCC; /* Tu editor foreground */
+            --text-muted: #858585; /* Tu editorLineNumber foreground */
+            --text-header: #C586C0; /* Tu color de keywords de control */
+            --text-terminal: #00ff00;
+            --border-color: #2B2B2B; /* Tu color de bordes activo */
+            --shadow: 0 4px 6px rgba(0,0,0,0.3);
+            --accent: #0078D4; /* Tu color de botones y foco */
+            --accent-hover: #1177bb; 
+            --danger: #d16d6d;
+        }
 
-app = FastAPI()
+        body.light-mode {
+            --bg-main: #f5f5f5; --bg-panel: #ffffff; --bg-header: #ffffff;
+            --bg-controls: #e0e0e0; --bg-terminal: #f0f0f0;
+            --text-main: #333333; --text-muted: #666666; --text-header: #00569c;
+            --text-terminal: #006600;
+            --border-color: #d0d0d0;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+        /* --- ESTILOS GENERALES --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s, color 0.2s; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-main); color: var(--text-main);
+            height: 100vh; display: flex; flex-direction: column;
+            overflow: hidden; padding: 15px;
+        }
 
-# =============================================================================
-# CONFIGURACIÓN DE ENTORNO (.tsc) — config.tsc
-# =============================================================================
-# IMPORTANTE: el intérprete lee config.tsc como JSON (por eso lanzaba
-# "Expecting value: line 1 column 1" — ese es el error típico de json.loads
-# cuando el contenido no es JSON válido). Este backend NO inventa un formato
-# propio: lee y escribe exactamente el mismo JSON que espera el intérprete,
-# con las claves tal cual las define config.txt (strict-mode, block-config,
-# transform-code, allow-cli-override, etc).
-#
-# Este backend únicamente:
-#   - LEE el config.tsc si ya existe, para mostrarlo en el panel.
-#   - ESCRIBE el config.tsc solo cuando el usuario pulsa "Guardar" en la UI,
-#     dejando el resto del archivo intacto (se reescribe completo con los
-#     mismos valores que ya tenía + los cambios hechos en el formulario).
-#
-# Ruta estándar XDG: ~/.config/Tesseract/config.tsc (o $XDG_CONFIG_HOME/Tesseract)
+        .font-mono { font-family: 'Fira Code', 'Consolas', 'Courier New', monospace; font-size: 0.95rem; }
 
-CONFIG_DIR_NAME = "Tesseract"
-CONFIG_TSC_NAME = "config.tsc"
+        /* --- CABECERA --- */
+        header {
+            background-color: var(--bg-header); padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 12px; margin-bottom: 15px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow);
+            flex-wrap: wrap; gap: 10px;
+        }
 
-# Límite de caracteres para los delimitadores personalizados de bloque
-PB_DELIMITER_MAX_LEN = 8
+        h1 { font-size: 1.3rem; color: var(--text-header); font-weight: 600; }
+        
+        .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .controls { display: flex; gap: 8px; align-items: center; }
+        
+        select, button:not(.theme-toggle) {
+            background-color: var(--bg-controls); color: var(--text-main);
+            border: 1px solid var(--border-color); padding: 8px 12px;
+            border-radius: 8px; cursor: pointer; font-size: 0.85rem; outline: none;
+        }
+        select:focus, button:focus { border-color: var(--accent); }
+        
+        button.run-btn { 
+            background-color: var(--accent); border: none; font-weight: 600; 
+            color: white; padding: 8px 18px;
+        }
+        button.run-btn:hover { background-color: var(--accent-hover); }
+        button.run-btn:disabled { background-color: var(--border-color); cursor: not-allowed; opacity: 0.7; }
 
+        .debug-control {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.85rem; color: var(--text-muted);
+            cursor: pointer; user-select: none;
+        }
+        .debug-control input { cursor: pointer; accent-color: var(--danger); transform: scale(1.1); }
+        .debug-control:hover { color: var(--text-main); }
 
-def get_config_dir() -> str:
-    xdg = os.environ.get("XDG_CONFIG_HOME") or os.path.join(
-        os.path.expanduser("~"), ".config")
-    return os.path.join(xdg, CONFIG_DIR_NAME)
+        /* --- SWITCH DE TEMA --- */
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted); }
+        .theme-switch { display: inline-block; height: 20px; position: relative; width: 44px; }
+        .theme-switch input { display:none; }
+        .slider {
+            background-color: var(--bg-controls); bottom: 0; cursor: pointer;
+            left: 0; position: absolute; right: 0; top: 0;
+            transition: .4s; border-radius: 34px; border: 1px solid var(--border-color);
+        }
+        .slider:before {
+            background-color: white; bottom: 2px; content: ""; height: 14px;
+            left: 4px; position: absolute; transition: .4s; width: 14px;
+            border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider { background-color: var(--accent); border-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(22px); }
 
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .main-container { display: flex; flex: 1; gap: 15px; overflow: hidden; padding-bottom: 5px; }
 
-def get_config_path() -> str:
-    return os.path.join(get_config_dir(), CONFIG_TSC_NAME)
+        .pane {
+            flex: 1; display: flex; flex-direction: column; height: 100%;
+            background-color: var(--bg-panel); border-radius: 12px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow);
+            overflow: hidden;
+        }
 
+        .pane-title {
+            background-color: var(--bg-header); padding: 8px 15px;
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
 
-def get_default_config() -> dict:
-    # Valores de referencia en modo "free" / libre (claves internas, con
-    # guion bajo, que usa el formulario de la UI). Solo se usan para
-    # rellenar el formulario cuando todavía no existe config.tsc en disco.
-    return {
-        "strict_mode": {
-            "enabled": False,
-            "typing": {
-                "variables": "free",
-                "functions": "free",
-                "parameters": "free",
+        .editor-container {
+            flex: 1; width: 100%; height: 100%; padding-top: 10px;
+        }
+
+        /* --- TERMINAL --- */
+        .terminal-container {
+            flex: 1; background-color: var(--bg-terminal);
+            display: flex; flex-direction: column;
+            padding: 15px; margin: 10px;
+            border-radius: 8px; border: 1px solid #000;
+            overflow: hidden;
+        }
+
+        #output {
+            flex: 1; color: var(--text-terminal);
+            overflow-y: auto; white-space: pre-wrap; line-height: 1.5;
+            padding-right: 5px;
+        }
+
+        .input-line {
+            display: flex; margin-top: 10px;
+            border-top: 1px solid rgba(128,128,128,0.2);
+            padding-top: 8px; align-items: center;
+        }
+        .prompt { color: var(--text-terminal); margin-right: 10px; font-weight: bold; user-select: none;}
+        #stdin {
+            flex: 1; background: transparent; border: none; color: var(--text-main); outline: none;
+        }
+        #stdin::placeholder { color: var(--text-muted); }
+        body.light-mode .terminal-container { border-color: var(--border-color); }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* --- BOTÓN DE CONFIGURACIÓN DE ENTORNO --- */
+        .config-btn {
+            background-color: var(--bg-controls); color: var(--text-main);
+            border: 1px solid var(--border-color); padding: 8px 14px;
+            border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+        }
+        .config-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* --- PANEL DE EJEMPLOS --- */
+        .examples-pane {
+            flex: 0 0 220px; max-width: 220px;
+            transition: flex-basis 0.25s ease, max-width 0.25s ease;
+        }
+        .examples-pane.collapsed { flex: 0 0 52px; max-width: 52px; }
+        .examples-pane .pane-title {
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
+        }
+        .examples-pane.collapsed .pane-title .pane-title-text { display: none; }
+        .examples-toggle {
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 1rem; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .examples-toggle:hover { color: var(--accent); }
+        .examples-list {
+            flex: 1; overflow-y: auto; padding: 8px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .examples-pane.collapsed .examples-list { display: none; }
+        .example-item {
+            background-color: transparent; color: var(--text-main);
+            border: 1px solid transparent; text-align: left;
+            padding: 9px 12px; border-radius: 8px; cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .example-item:hover { background-color: var(--bg-controls); }
+        .example-item.active {
+            background-color: var(--bg-controls); border-color: var(--accent);
+            color: var(--accent); font-weight: 600;
+        }
+        .example-item .example-desc {
+            display: block; font-size: 0.72rem; color: var(--text-muted);
+            font-weight: 400; margin-top: 2px;
+        }
+        .example-item.active .example-desc { color: var(--text-muted); }
+
+        /* Opciones deshabilitadas en los selects (modos web/nativo desactivados) */
+        select option:disabled { color: var(--text-muted); font-style: italic; }
+
+        /* --- MODAL DE CONFIGURACIÓN DE ENTORNO --- */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            background-color: rgba(0,0,0,0.55);
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background-color: var(--bg-panel); color: var(--text-main);
+            border: 1px solid var(--border-color); border-radius: 12px;
+            box-shadow: var(--shadow); width: 100%; max-width: 640px;
+            max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; background-color: var(--bg-header);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .modal-header h2 { font-size: 1.05rem; color: var(--text-header); font-weight: 600; }
+        .modal-subtitle {
+            font-size: 0.75rem; color: var(--text-muted); font-weight: 400;
+            font-family: 'Fira Code', monospace; margin-left: 6px;
+        }
+        .modal-close {
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+        }
+        .modal-close:hover { color: var(--danger); }
+        .modal-body { padding: 18px 20px; overflow-y: auto; }
+        .config-section {
+            border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 14px; margin-bottom: 14px; background-color: var(--bg-main);
+        }
+        .config-section-title { margin-bottom: 10px; }
+        .config-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        .config-field {
+            display: flex; flex-direction: column; gap: 4px;
+            font-size: 0.8rem; color: var(--text-muted);
+        }
+        .config-field em { font-style: normal; color: var(--text-muted); opacity: 0.8; font-size: 0.72rem; }
+        .config-field select, .config-field input[type="text"] {
+            background-color: var(--bg-controls); color: var(--text-main);
+            border: 1px solid var(--border-color); padding: 7px 10px;
+            border-radius: 6px; font-size: 0.85rem; outline: none;
+        }
+        .config-field-inline { grid-column: 1 / -1; }
+        .switch-row {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            font-size: 0.88rem; color: var(--text-main); user-select: none;
+        }
+        .switch-row input[type="checkbox"] {
+            cursor: pointer; accent-color: var(--accent); transform: scale(1.15);
+        }
+        .config-status {
+            font-size: 0.82rem; min-height: 18px; margin-top: 4px;
+        }
+        .config-status.ok { color: #4caf50; }
+        .config-status.error { color: var(--danger); }
+        .modal-footer {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 14px 20px; border-top: 1px solid var(--border-color);
+            background-color: var(--bg-header);
+        }
+        .secondary-btn {
+            background-color: transparent; color: var(--text-muted);
+            border: 1px solid var(--border-color); padding: 8px 16px;
+            border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+        }
+        .secondary-btn:hover { color: var(--text-main); border-color: var(--text-muted); }
+
+        /* --- RESPONSIVE / MÓVILES --- */
+        @media (max-width: 900px) {
+            .examples-pane { flex: 0 0 170px; max-width: 170px; }
+            .config-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 8px; }
+            header { padding: 10px 14px; }
+            h1 { font-size: 1.1rem; }
+            .header-right { gap: 8px; }
+            .controls { flex-wrap: wrap; }
+            select, button:not(.theme-toggle) { font-size: 0.8rem; padding: 7px 10px; }
+
+            .main-container { flex-direction: column; overflow-y: auto; }
+            .examples-pane {
+                flex: 0 0 auto; max-width: none; max-height: 260px; order: -1;
+                transition: max-height 0.25s ease;
+            }
+            .examples-pane.collapsed { max-height: 48px; }
+            .examples-list { flex-direction: row; flex-wrap: wrap; }
+            .example-item { flex: 0 0 auto; }
+
+            .pane { flex: none; min-height: 320px; }
+            .editor-container { min-height: 280px; }
+            .terminal-container { min-height: 260px; }
+
+            .modal-box { max-height: 95vh; }
+            .modal-header h2 { font-size: 0.95rem; }
+        }
+    </style>
+
+    <!-- Cargador de Monaco Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header>
+        <h1>Tesseract Playground</h1>
+        <div class="header-right">
+            <!-- Botón de configuración de entorno (.tsc) -->
+            <button class="config-btn" id="configBtn" title="Configurar entorno (config.tsc)">⚙ Entorno</button>
+
+            <!-- Selector de Tema -->
+            <div class="theme-switch-wrapper">
+                <span>🌙</span>
+                <label class="theme-switch" for="checkbox">
+                    <input type="checkbox" id="checkbox" />
+                    <div class="slider"></div>
+                </label>
+                <span>☀️</span>
+            </div>
+
+            <!-- Checkbox Debug -->
+            <label class="debug-control">
+                <input type="checkbox" id="debugCheck">
+                <span>Debug (-d)</span>
+            </label>
+
+            <div class="controls">
+                <select id="syntax">
+                    <option value="-b">Sintaxis: Llaves</option>
+                    <option value="-i">Sintaxis: Indentación</option>
+                </select>
+                <select id="target">
+                    <option value="interp">Modo: Interpretar</option>
+                    <option value="native">Modo: Nativo (LLVM)</option>
+                    <option value="web">Modo: Web (JS)</option>
+                </select>
+                <button class="run-btn" id="runBtn">► Ejecutar</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="pane examples-pane" id="examplesPane">
+            <div class="pane-title">
+                <span class="pane-title-text">Ejemplos</span>
+                <button class="examples-toggle" id="examplesToggle" title="Mostrar/ocultar ejemplos">☰</button>
+            </div>
+            <div class="examples-list" id="examplesList"></div>
+        </div>
+
+        <div class="pane">
+            <div class="pane-title">Código fuente (.tss)</div>
+            <div id="monaco-editor" class="editor-container"></div>
+        </div>
+
+        <div class="pane">
+            <div class="pane-title">Consola de Salida</div>
+            <div class="terminal-container font-mono">
+                <div id="output">Haz clic en 'Ejecutar' para comenzar...</div>
+                <div class="input-line">
+                    <span class="prompt">&gt;</span>
+                    <input type="text" id="stdin" placeholder="Escribe aquí y pulsa Enter..." disabled />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL: CONFIGURACIÓN DE ENTORNO (config.tsc)                      -->
+    <!-- ================================================================= -->
+    <div class="modal-overlay" id="configOverlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Configuración de entorno <span class="modal-subtitle">config.tsc</span></h2>
+                <button class="modal-close" id="configClose">✕</button>
+            </div>
+
+            <div class="modal-body" id="configBody">
+                <section class="config-section">
+                    <div class="config-section-title">
+                        <label class="switch-row">
+                            <input type="checkbox" id="cfgStrictEnabled">
+                            <span>strict-mode</span>
+                        </label>
+                    </div>
+                    <div class="config-grid">
+                        <label class="config-field">
+                            <span>Tipado — variables</span>
+                            <select id="cfgTypingVariables">
+                                <option value="only-static">only-static</option>
+                                <option value="only-dynamic">only-dynamic</option>
+                                <option value="free">free</option>
+                            </select>
+                        </label>
+                        <label class="config-field">
+                            <span>Tipado — funciones</span>
+                            <select id="cfgTypingFunctions">
+                                <option value="only-static">only-static</option>
+                                <option value="only-dynamic">only-dynamic</option>
+                                <option value="free">free</option>
+                            </select>
+                        </label>
+                        <label class="config-field">
+                            <span>Tipado — parámetros</span>
+                            <select id="cfgTypingParameters">
+                                <option value="only-static">only-static</option>
+                                <option value="only-dynamic">only-dynamic</option>
+                                <option value="free">free</option>
+                            </select>
+                        </label>
+                        <label class="config-field">
+                            <span>only-block</span>
+                            <select id="cfgOnlyBlock">
+                                <option value="null">Sin restricción</option>
+                                <option value="brace">brace</option>
+                                <option value="indent">indent</option>
+                            </select>
+                        </label>
+                        <label class="config-field">
+                            <span>execution_mode</span>
+                            <select id="cfgExecutionMode">
+                                <option value="free">free</option>
+                                <option value="compiled">compiled</option>
+                                <option value="interpreter">interpreter</option>
+                                <option value="web">web</option>
+                            </select>
+                        </label>
+                        <label class="switch-row config-field-inline">
+                            <input type="checkbox" id="cfgEntryPointStrict">
+                            <span>entry_point-strict (requiere función -&gt; main)</span>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <div class="config-section-title">
+                        <label class="switch-row">
+                            <input type="checkbox" id="cfgBlockEnabled">
+                            <span>block-config (bloques con delimitadores personalizados)</span>
+                        </label>
+                    </div>
+                    <div class="config-grid">
+                        <label class="config-field">
+                            <span>pb_start <em>(máx. 8 caracteres)</em></span>
+                            <input type="text" id="cfgPbStart" maxlength="8" placeholder="begin">
+                        </label>
+                        <label class="config-field">
+                            <span>pb_end <em>(máx. 8 caracteres)</em></span>
+                            <input type="text" id="cfgPbEnd" maxlength="8" placeholder="end">
+                        </label>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <div class="config-section-title">
+                        <label class="switch-row">
+                            <input type="checkbox" id="cfgTransformEnabled">
+                            <span>transform-code (transformar estilo de bloques)</span>
+                        </label>
+                    </div>
+                    <div class="config-grid">
+                        <label class="switch-row config-field-inline">
+                            <input type="checkbox" id="cfgTransformMutable">
+                            <span>mutable (mutar el archivo original, --mut)</span>
+                        </label>
+                        <label class="config-field">
+                            <span>target</span>
+                            <select id="cfgTransformTarget">
+                                <option value="brace">brace</option>
+                                <option value="indent">indent</option>
+                            </select>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="config-section">
+                    <label class="switch-row">
+                        <input type="checkbox" id="cfgAllowCliOverride">
+                        <span>allow-cli-override (los flags de CLI pueden sobreescribir esta config)</span>
+                    </label>
+                </section>
+
+                <div class="config-status" id="configStatus"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="secondary-btn" id="configReset">Restaurar modo libre</button>
+                <button class="run-btn" id="configSave">💾 Guardar configuración</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === CONFIGURACIÓN DE TU BACKEND ===
+const WS_URL = "wss://Fran23135-Tesseractplayground.hf.space/ws";
+// URL HTTP derivada del WS_URL, usada para /config (GET y POST)
+const HTTP_URL = WS_URL.replace(/^ws/, 'http').replace(/\/ws\/?$/, '');
+
+// === INTERRUPTORES DE MODOS (activar/desactivar en el desplegable) ===
+// Por ahora los modos "web" y "native" no funcionan en el backend,
+// así que se desactivan aquí con estas variables. Cambia a `true`
+// cuando estén listos y volverán a aparecer habilitados en el selector.
+const ENABLE_WEB_MODE = false;
+const ENABLE_NATIVE_MODE = false;
+
+let tesseractEditor = null;
+
+// ==========================================================================
+// EJEMPLOS DEL PLAYGROUND (panel izquierdo)
+// ==========================================================================
+// Se definen aquí, fuera del loader de Monaco, para que estén disponibles
+// de inmediato (Monaco carga de forma asíncrona y tarda más en estar listo).
+//
+// Para agregar un ejemplo nuevo, copia un bloque { title, desc, code: `...` }
+// y escribe el código TAL CUAL entre los backticks (` `), en varias líneas,
+// sin necesidad de comillas por línea. Los espacios y saltos de línea se
+// respetan exactamente como los escribas.
+window.tesseractExamples = [
+    {
+        title: 'Demo completo',
+        desc: 'Variables, tipado, condicionales y bucles',
+        code: `// Demo de Tesseract con soporte nativo de tu extensión
+var nombre;
+const int limite = 18;
+var edad;
+
+print("Ingresa tu nombre: ");
+read(nombre);
+
+print("Ingresa tu edad: ");
+read(edad,int);
+
+print("");
+print("--- RESUMEN ---");
+print("Hola " . nombre . ", tienes " . edad . " años.");
+print("Interpolación: hola soy #(nombre), tengo #(edad) años.");
+
+if (edad >= limite) {
+    print("Acceso concedido de forma nativa.\\n");
+} else {
+    print("Eres menor de edad.");
+}
+
+print("\\nProbando scroll del output:");
+var i = 0;
+while(i < 30){
+    print("Línea de salida número: " . i);
+    i = i + 1;
+}`
+    },
+    {
+        title: 'Variables y tipado',
+        desc: 'Declaración estática vs dinámica',
+        code: `// Ejemplo: variables y tipado
+`
+    },
+    {
+        title: 'Condicionales',
+        desc: 'if / else',
+        code: `// Ejemplo: condicionales
+`
+    },
+    {
+        title: 'Bucles',
+        desc: 'while / for',
+        code: `// Ejemplo: bucles
+`
+    },
+    {
+        title: 'Funciones',
+        desc: 'function ... return',
+        code: `// Ejemplo: funciones
+`
+    },
+    {
+        title: 'Arrays y colecciones',
+        desc: 'array, tuple, dict',
+        code: `// Ejemplo: arrays y colecciones
+`
+    }
+];
+
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
+require(['vs/editor/editor.main'], function() {
+    
+    // 1. Registrar identificador del lenguaje
+    monaco.languages.register({ id: 'tesseract' });
+
+    // Configuración de lenguaje: pares de brackets para auto-cierre y para
+    // que Monaco pueda aplicar el coloreado por nivel de anidación (como en VSCode)
+    monaco.languages.setLanguageConfiguration('tesseract', {
+        comments: { lineComment: '//', blockComment: ['/*', '*/'] },
+        brackets: [['{', '}'], ['[', ']'], ['(', ')']],
+        autoClosingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" }
+        ],
+        surroundingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" }
+        ]
+    });
+
+    // 2. TOKENIZER MONARCH DEFINITIVO (Orden de prioridad corregido según tu .tmLanguage.json)
+    monaco.languages.setMonarchTokensProvider('tesseract', {
+        keywordsControl: [
+            'function', 'if', 'else', 'return', 'while', 'for', 
+            'perform', 'switch', 'break', 'continue', 'library', 
+            'from', 'use', 'as', 'al'
+        ],
+        storageTypes: ['int', 'string', 'bool', 'float', 'var', 'const', 'void','range','array','tuple','dict'],
+        supportFunctions: ['print', 'read'],
+
+        tokenizer: {
+            root: [
+                // 1. COMENTARIOS (Prioridad máxima para evitar falsos positivos)
+                [/\/\/.*$/, 'comment.line'],
+                [/\/\*/, { token: 'comment.block', next: '@commentBlock' }],
+
+                // 2. STRINGS (Antes de los identificadores para capturar comillas limpias)
+                [/"/, { token: 'string.quoted.double', next: '@stringDouble' }],
+                [/'/, { token: 'string.quoted.simple', next: '@stringSimple' }],
+
+                // 3. CAPTURA DE IMPORTS (library_imports)
+                [/\b(library|from)\b/, { token: 'keyword.control.import', next: '@importLine' }],
+
+                // 4. LLAMADAS A FUNCIONES (Debe ir obligatoriamente ANTES de los identificadores)
+                [/\b[a-zA-Z_]\w*(?=\s*\()/, 'entity.name.function'],
+
+                // 5. IDENTIFICADORES Y KEYWORDS (Evaluación por descarte)
+                [/[a-zA-Z_]\w*/, {
+                    cases: {
+                        '@keywordsControl': 'keyword.control',
+                        '@storageTypes': 'storage.type',
+                        '@supportFunctions': 'support.function',
+                        '@default': 'identifier'
+                    }
+                }],
+
+                // 6. NÚMEROS Y OPERADORES
+                [/\b\d+(\.\d+)?\b/, 'constant.numeric'],
+                [/(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!\.])/, 'keyword.operator'],
+
+                // 7. BRACKETS (para el coloreado por nivel de anidación de Monaco)
+                [/[{}]/, 'delimiter.curly'],
+                [/[\[\]]/, 'delimiter.square'],
+                [/[()]/, 'delimiter.parenthesis']
+            ],
+
+            // Estado intermedio para procesar la línea de importación hasta el salto de línea ($)
+            importLine: [
+                [/\b(use|as|al)\b/, 'keyword.control.import'],
+                [/\b[a-zA-Z_]\w*\b/, 'entity.name.import'],
+                [/$/, { token: '', next: '@pop' }],
+                { include: '@root' }
+            ],
+
+            // Sub-estados de strings para procesar caracteres de escape (constant.character.escape)
+            // y la interpolación #( expresión ), que se sale del modo "string" para tokenizar
+            // el contenido como código normal (identificadores, funciones, números, operadores).
+            stringDouble: [
+                [/#\(/, { token: 'delimiter.interpolation', next: '@interpolation' }],
+                [/[^\\"#]+/, 'string.quoted.double'],
+                [/\\./, 'constant.character.escape'],
+                [/#/, 'string.quoted.double'],
+                [/"/, { token: 'string.quoted.double', next: '@pop' }]
+            ],
+            stringSimple: [
+                [/#\(/, { token: 'delimiter.interpolation', next: '@interpolation' }],
+                [/[^\\'#]+/, 'string.quoted.simple'],
+                [/\\./, 'constant.character.escape'],
+                [/#/, 'string.quoted.simple'],
+                [/'/, { token: 'string.quoted.simple', next: '@pop' }]
+            ],
+
+            // Contenido de una interpolación #( ... ): se tokeniza como código normal
+            // (blanco/plano, no como string). Los "(" reales (ej. llamadas a función
+            // dentro de la interpolación) abren un nivel aparte para no confundirse
+            // con el "(" de apertura de la propia interpolación.
+            interpolation: [
+                [/\(/, { token: 'delimiter.parenthesis', next: '@interpParen' }],
+                [/\)/, { token: 'delimiter.interpolation', next: '@pop' }],
+                [/\b[a-zA-Z_]\w*(?=\s*\()/, 'entity.name.function'],
+                [/[a-zA-Z_]\w*/, {
+                    cases: {
+                        '@keywordsControl': 'keyword.control',
+                        '@storageTypes': 'storage.type',
+                        '@supportFunctions': 'support.function',
+                        '@default': 'identifier'
+                    }
+                }],
+                [/\b\d+(\.\d+)?\b/, 'constant.numeric'],
+                [/(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!\.,])/, 'keyword.operator'],
+                [/"/, { token: 'string.quoted.double', next: '@stringDouble' }],
+                [/'/, { token: 'string.quoted.simple', next: '@stringSimple' }]
+            ],
+
+            // Paréntesis "reales" dentro de una interpolación (ej. llamadas a función).
+            // Al cerrar, vuelve al nivel de interpolación (o a otro interpParen anidado).
+            interpParen: [
+                [/\(/, { token: 'delimiter.parenthesis', next: '@interpParen' }],
+                [/\)/, { token: 'delimiter.parenthesis', next: '@pop' }],
+                [/\b[a-zA-Z_]\w*(?=\s*\()/, 'entity.name.function'],
+                [/[a-zA-Z_]\w*/, {
+                    cases: {
+                        '@keywordsControl': 'keyword.control',
+                        '@storageTypes': 'storage.type',
+                        '@supportFunctions': 'support.function',
+                        '@default': 'identifier'
+                    }
+                }],
+                [/\b\d+(\.\d+)?\b/, 'constant.numeric'],
+                [/(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!\.,])/, 'keyword.operator'],
+                [/"/, { token: 'string.quoted.double', next: '@stringDouble' }],
+                [/'/, { token: 'string.quoted.simple', next: '@stringSimple' }]
+            ],
+
+            // Comentarios de bloque
+            commentBlock: [
+                [/[^\/*]+/, 'comment.block'],
+                [/\*\//, { token: 'comment.block', next: '@pop' }],
+                [/[/*]/, 'comment.block']
+            ]
+        }
+    });
+
+    // 3. TEMA "TESSLANG DARK MODERN" (Asegúrate de usar punto después de editor)
+    monaco.editor.defineTheme('tesslang-dark-modern', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+            { token: 'keyword.control', foreground: 'C586C0' },
+            { token: 'keyword.control.import', foreground: 'C586C0' },
+            { token: 'entity.name.import', foreground: '4EC9B0', fontStyle: 'bold' },
+            { token: 'storage.type', foreground: '569CD6' },
+            { token: 'support.function', foreground: 'DCDCAA' },
+            { token: 'entity.name.function', foreground: 'DCDCAA' },
+            { token: 'string.quoted.double', foreground: 'CE9178' },
+            { token: 'string.quoted.simple', foreground: 'CE9178' },
+            { token: 'delimiter.interpolation', foreground: 'FF9E64', fontStyle: 'bold' },
+            { token: 'constant.character.escape', foreground: 'D7BA7D' },
+            { token: 'constant.numeric', foreground: 'B5CEA8' },
+            { token: 'keyword.operator', foreground: 'D4D4D4' },
+            { token: 'comment.line', foreground: '6A9955', fontStyle: 'italic' },
+            { token: 'comment.block', foreground: '6A9955', fontStyle: 'italic' }
+        ],
+        colors: {
+            'editor.background': '#1F1F1F',
+            'editor.foreground': '#CCCCCC',
+            'editorLineNumber.foreground': '#858585',
+            'editorLineNumber.activeForeground': '#C6C6C6',
+            'editorCursor.foreground': '#AEAFAD',
+            'editor.selectionBackground': '#264F78',
+            'editor.inactiveSelectionBackground': '#3A3D41',
+            'editor.lineHighlightBackground': '#2A2A2A',
+            'editorIndentGuide.background1': '#404040'
+        }
+    });
+
+    // Tema claro alternativo (También con punto)
+    monaco.editor.defineTheme('tesseract-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [
+            { token: 'keyword.control', foreground: 'AF00DB' },                  // Morado sutil
+            { token: 'keyword.control.import', foreground: 'AF00DB' },           // Morado sutil
+            { token: 'entity.name.import', foreground: '005CC5', fontStyle: 'bold' }, // Azul marino
+            { token: 'storage.type', foreground: '005CC5' },                     // Azul marino
+            { token: 'support.function', foreground: '745300' },                 // Ocre/marrón técnico
+            { token: 'entity.name.function', foreground: '745300' },             // Ocre/marrón técnico
+            { token: 'string.quoted.double', foreground: 'A31515' },             // Rojo ladrillo clásico
+            { token: 'string.quoted.simple', foreground: 'A31515' },             // Rojo ladrillo clásico
+            { token: 'delimiter.interpolation', foreground: 'C2410C', fontStyle: 'bold' }, // Naranja quemado
+            { token: 'constant.character.escape', foreground: '0000FF' },        // Azul eléctrico
+            { token: 'constant.numeric', foreground: '098658' },                 // Verde esmeralda oscuro
+            { token: 'keyword.operator', foreground: '333333' },                 // Gris oscuro para operadores
+            { token: 'comment.line', foreground: '6A737D', fontStyle: 'italic' }, // Gris pizarra moderno
+            { token: 'comment.block', foreground: '6A737D', fontStyle: 'italic' } // Gris pizarra moderno
+        ],
+        colors: {
+            'editor.background': '#FAFAFA',                         // Blanco roto/suave que no cansa la vista
+            'editor.foreground': '#24292E',                         // Carbón oscuro para el texto normal
+            'editorLineNumber.foreground': '#A0A0A0',               // Números de línea atenuados
+            'editorLineNumber.activeForeground': '#4A4A4A',         // Número de línea activo más oscuro
+            'editorCursor.foreground': '#000000',                   // Cursor negro
+            'editor.selectionBackground': '#ADD6FF',                // Azul claro translúcido para selección
+            'editor.inactiveSelectionBackground': '#E4F1FF',
+            'editor.lineHighlightBackground': '#F2F2F2',            // Resaltado de línea actual muy sutil
+            'editorIndentGuide.background1': '#E1E4E8'              // Guías de indentación limpias
+        }
+    });
+
+    const isLight = document.body.classList.contains('light-mode');
+    tesseractEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+        value: window.tesseractExamples[0].code,
+        language: 'tesseract',
+        theme: isLight ? 'tesseract-light' : 'tesslang-dark-modern',
+        automaticLayout: true,
+        fontSize: 14,
+        fontFamily: "'Fira Code', 'Consolas', monospace",
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        renderLineHighlight: 'all',
+        bracketPairColorization: { enabled: true },
+        guides: { bracketPairs: true }
+    });
+});
+
+// === GESTIÓN DE TEMA (Noche/Día) ===
+const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+const currentTheme = localStorage.getItem('theme');
+
+if (currentTheme) {
+    document.body.classList.add(currentTheme);
+    if (currentTheme === 'light-mode' && toggleSwitch) toggleSwitch.checked = true;
+}
+
+toggleSwitch.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light-mode');
+        if (monaco.editor) monaco.editor.setTheme('tesseract-light');
+    } else {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark-mode');
+        if (monaco.editor) monaco.editor.setTheme('tesslang-dark-modern');
+    }
+});
+
+// === PANEL DE EJEMPLOS (plegable/desplegable en cualquier pantalla) ===
+const examplesList = document.getElementById('examplesList');
+const examplesPane = document.getElementById('examplesPane');
+const examplesToggle = document.getElementById('examplesToggle');
+
+function renderExamples() {
+    examplesList.innerHTML = '';
+    window.tesseractExamples.forEach((ex, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'example-item' + (idx === 0 ? ' active' : '');
+        btn.innerHTML = `${ex.title}<span class="example-desc">${ex.desc || ''}</span>`;
+        btn.addEventListener('click', () => {
+            if (!tesseractEditor) return;
+            tesseractEditor.setValue(ex.code);
+            document.querySelectorAll('.example-item').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+        });
+        examplesList.appendChild(btn);
+    });
+}
+renderExamples();
+
+// En pantallas pequeñas arranca colapsado para no ocupar espacio del editor
+if (window.innerWidth <= 768 && examplesPane) {
+    examplesPane.classList.add('collapsed');
+}
+
+if (examplesToggle) {
+    examplesToggle.addEventListener('click', () => {
+        examplesPane.classList.toggle('collapsed');
+    });
+}
+
+// === ACTIVAR / DESACTIVAR MODOS WEB Y NATIVO EN EL SELECTOR ===
+(function applyModeSwitches() {
+    const select = document.getElementById('target');
+    if (!select) return;
+    const optNative = select.querySelector('option[value="native"]');
+    const optWeb = select.querySelector('option[value="web"]');
+
+    if (optNative && !ENABLE_NATIVE_MODE) {
+        optNative.disabled = true;
+        optNative.textContent = 'Modo: Nativo (LLVM) — deshabilitado';
+    }
+    if (optWeb && !ENABLE_WEB_MODE) {
+        optWeb.disabled = true;
+        optWeb.textContent = 'Modo: Web (JS) — deshabilitado';
+    }
+    // Si el valor seleccionado por defecto quedó deshabilitado, forzamos "interp"
+    if (select.options[select.selectedIndex] && select.options[select.selectedIndex].disabled) {
+        select.value = 'interp';
+    }
+})();
+
+// === MODAL DE CONFIGURACIÓN DE ENTORNO (config.tsc) ===
+(function setupConfigModal() {
+    const configBtn = document.getElementById('configBtn');
+    const overlay = document.getElementById('configOverlay');
+    const closeBtn = document.getElementById('configClose');
+    const saveBtn = document.getElementById('configSave');
+    const resetBtn = document.getElementById('configReset');
+    const statusEl = document.getElementById('configStatus');
+
+    const fields = {
+        strictEnabled: document.getElementById('cfgStrictEnabled'),
+        typingVariables: document.getElementById('cfgTypingVariables'),
+        typingFunctions: document.getElementById('cfgTypingFunctions'),
+        typingParameters: document.getElementById('cfgTypingParameters'),
+        onlyBlock: document.getElementById('cfgOnlyBlock'),
+        entryPointStrict: document.getElementById('cfgEntryPointStrict'),
+        executionMode: document.getElementById('cfgExecutionMode'),
+        blockEnabled: document.getElementById('cfgBlockEnabled'),
+        pbStart: document.getElementById('cfgPbStart'),
+        pbEnd: document.getElementById('cfgPbEnd'),
+        transformEnabled: document.getElementById('cfgTransformEnabled'),
+        transformMutable: document.getElementById('cfgTransformMutable'),
+        transformTarget: document.getElementById('cfgTransformTarget'),
+        allowCliOverride: document.getElementById('cfgAllowCliOverride'),
+    };
+
+    const PB_MAX_LEN = 8; // límite de caracteres para delimitadores personalizados
+
+    function defaultConfig() {
+        return {
+            strict_mode: {
+                enabled: false,
+                typing: { variables: 'free', functions: 'free', parameters: 'free' },
+                only_block: null,
+                entry_point_strict: false,
+                execution_mode: 'free'
             },
-            "only_block": None,
-            "entry_point_strict": False,
-            "execution_mode": "free",
-        },
-        "block_config": {
-            "enabled": False,
-            "pb_start": "begin",
-            "pb_end": "end",
-        },
-        "transform_code": {
-            "enabled": False,
-            "mutable": False,
-            "target": "brace",
-        },
-        "allow_cli_override": True,
+            block_config: { enabled: false, pb_start: 'begin', pb_end: 'end' },
+            transform_code: { enabled: false, mutable: false, target: 'brace' },
+            allow_cli_override: true
+        };
     }
 
+    function fillForm(cfg) {
+        const sm = cfg.strict_mode || {};
+        const typing = sm.typing || {};
+        const bc = cfg.block_config || {};
+        const tc = cfg.transform_code || {};
 
-def to_disk_json(cfg: dict) -> dict:
-    """Convierte el dict interno (guion bajo) al JSON real que espera el
-    intérprete, con las claves exactas de config.txt (con guion medio)."""
-    sm = cfg.get("strict_mode", {}) or {}
-    typing = sm.get("typing", {}) or {}
-    bc = cfg.get("block_config", {}) or {}
-    tc = cfg.get("transform_code", {}) or {}
+        fields.strictEnabled.checked = !!sm.enabled;
+        fields.typingVariables.value = typing.variables || 'free';
+        fields.typingFunctions.value = typing.functions || 'free';
+        fields.typingParameters.value = typing.parameters || 'free';
+        fields.onlyBlock.value = sm.only_block || 'null';
+        fields.entryPointStrict.checked = !!sm.entry_point_strict;
+        fields.executionMode.value = sm.execution_mode || 'free';
 
-    return {
-        "strict-mode": {
-            "enabled": bool(sm.get("enabled", False)),
-            "typing": {
-                "variables": typing.get("variables", "free"),
-                "functions": typing.get("functions", "free"),
-                "parameters": typing.get("parameters", "free"),
-            },
-            "only-block": sm.get("only_block"),
-            "entry_point-strict": bool(sm.get("entry_point_strict", False)),
-            "execution_mode": sm.get("execution_mode", "free"),
-        },
-        "block-config": {
-            "enabled": bool(bc.get("enabled", False)),
-            "pb_start": bc.get("pb_start", "begin"),
-            "pb_end": bc.get("pb_end", "end"),
-        },
-        "transform-code": {
-            "enabled": bool(tc.get("enabled", False)),
-            "mutable": bool(tc.get("mutable", False)),
-            "target": tc.get("target", "brace"),
-        },
-        "allow-cli-override": bool(cfg.get("allow_cli_override", True)),
+        fields.blockEnabled.checked = !!bc.enabled;
+        fields.pbStart.value = bc.pb_start || 'begin';
+        fields.pbEnd.value = bc.pb_end || 'end';
+
+        fields.transformEnabled.checked = !!tc.enabled;
+        fields.transformMutable.checked = !!tc.mutable;
+        fields.transformTarget.value = tc.target || 'brace';
+
+        fields.allowCliOverride.checked = cfg.allow_cli_override !== false;
     }
 
+    function readForm() {
+        return {
+            strict_mode: {
+                enabled: fields.strictEnabled.checked,
+                typing: {
+                    variables: fields.typingVariables.value,
+                    functions: fields.typingFunctions.value,
+                    parameters: fields.typingParameters.value,
+                },
+                only_block: fields.onlyBlock.value === 'null' ? null : fields.onlyBlock.value,
+                entry_point_strict: fields.entryPointStrict.checked,
+                execution_mode: fields.executionMode.value,
+            },
+            block_config: {
+                enabled: fields.blockEnabled.checked,
+                pb_start: fields.pbStart.value.slice(0, PB_MAX_LEN),
+                pb_end: fields.pbEnd.value.slice(0, PB_MAX_LEN),
+            },
+            transform_code: {
+                enabled: fields.transformEnabled.checked,
+                mutable: fields.transformMutable.checked,
+                target: fields.transformTarget.value,
+            },
+            allow_cli_override: fields.allowCliOverride.checked,
+        };
+    }
 
-def from_disk_json(data: dict) -> dict:
-    """Convierte el JSON real del disco (claves con guion medio) al dict
-    interno (guion bajo) que usa el formulario de la UI."""
-    cfg = get_default_config()
-    sm = data.get("strict-mode", {}) or {}
-    typing = sm.get("typing", {}) or {}
-    bc = data.get("block-config", {}) or {}
-    tc = data.get("transform-code", {}) or {}
+    function setStatus(msg, type) {
+        statusEl.textContent = msg || '';
+        statusEl.className = 'config-status' + (type ? ' ' + type : '');
+    }
 
-    cfg["strict_mode"]["enabled"] = bool(sm.get("enabled", cfg["strict_mode"]["enabled"]))
-    cfg["strict_mode"]["typing"]["variables"] = typing.get("variables", cfg["strict_mode"]["typing"]["variables"])
-    cfg["strict_mode"]["typing"]["functions"] = typing.get("functions", cfg["strict_mode"]["typing"]["functions"])
-    cfg["strict_mode"]["typing"]["parameters"] = typing.get("parameters", cfg["strict_mode"]["typing"]["parameters"])
-    cfg["strict_mode"]["only_block"] = sm.get("only-block", cfg["strict_mode"]["only_block"])
-    cfg["strict_mode"]["entry_point_strict"] = bool(sm.get("entry_point-strict", cfg["strict_mode"]["entry_point_strict"]))
-    cfg["strict_mode"]["execution_mode"] = sm.get("execution_mode", cfg["strict_mode"]["execution_mode"])
+    async function loadConfig() {
+        setStatus('Cargando configuración...', '');
+        try {
+            const res = await fetch(`${HTTP_URL}/config`);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const cfg = await res.json();
+            fillForm(cfg);
+            if (cfg._exists === false) {
+                setStatus('Aún no existe config.tsc en el entorno (se genera solo al ejecutar el intérprete). Mostrando modo libre por defecto.', '');
+            } else {
+                setStatus('', '');
+            }
+        } catch (err) {
+            fillForm(defaultConfig());
+            setStatus('No se pudo contactar al servidor. Mostrando modo libre por defecto.', 'error');
+        }
+    }
 
-    cfg["block_config"]["enabled"] = bool(bc.get("enabled", cfg["block_config"]["enabled"]))
-    cfg["block_config"]["pb_start"] = bc.get("pb_start", cfg["block_config"]["pb_start"])
-    cfg["block_config"]["pb_end"] = bc.get("pb_end", cfg["block_config"]["pb_end"])
+    async function saveConfig() {
+        const cfg = readForm();
 
-    cfg["transform_code"]["enabled"] = bool(tc.get("enabled", cfg["transform_code"]["enabled"]))
-    cfg["transform_code"]["mutable"] = bool(tc.get("mutable", cfg["transform_code"]["mutable"]))
-    cfg["transform_code"]["target"] = tc.get("target", cfg["transform_code"]["target"])
+        if (cfg.block_config.pb_start.length > PB_MAX_LEN || cfg.block_config.pb_end.length > PB_MAX_LEN) {
+            setStatus(`Los delimitadores no pueden superar ${PB_MAX_LEN} caracteres.`, 'error');
+            return;
+        }
 
-    cfg["allow_cli_override"] = bool(data.get("allow-cli-override", cfg["allow_cli_override"]))
-    return cfg
+        setStatus('Guardando...', '');
+        try {
+            const res = await fetch(`${HTTP_URL}/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cfg)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al guardar');
+            setStatus('✔ Configuración guardada en config.tsc', 'ok');
+        } catch (err) {
+            setStatus('✖ ' + err.message, 'error');
+        }
+    }
 
+    if (configBtn) {
+        configBtn.addEventListener('click', () => {
+            overlay.classList.add('open');
+            loadConfig();
+        });
+    }
+    if (closeBtn) closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+    if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+    if (saveBtn) saveBtn.addEventListener('click', saveConfig);
+    if (resetBtn) resetBtn.addEventListener('click', () => { fillForm(defaultConfig()); setStatus('Formulario restaurado a modo libre (aún no guardado).', ''); });
+})();
 
-def write_config_to_disk(cfg: dict) -> str:
-    """Escribe cfg (dict interno, guion bajo) como JSON real en config.tsc."""
-    cfg_dir = get_config_dir()
-    os.makedirs(cfg_dir, exist_ok=True)
-    tsc_path = get_config_path()
-    disk_json = to_disk_json(cfg)
-    with open(tsc_path, "w", encoding="utf-8") as f:
-        json.dump(disk_json, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-    return tsc_path
+// === LÓGICA DE WEBSOCKETS ===
+const output = document.getElementById('output');
+const stdin = document.getElementById('stdin');
+const runBtn = document.getElementById('runBtn');
+const syntaxSelect = document.getElementById('syntax');
+const targetSelect = document.getElementById('target');
+const debugCheck = document.getElementById('debugCheck');
 
+let ws = null;
+let isRunning = false; // Controla si hay un proceso activo
 
-@app.on_event("startup")
-async def reset_config_on_startup():
-    """Al arrancar el servidor, el entorno siempre parte en modo libre.
-    Evita heredar un config.tsc que alguien haya dejado guardado de una
-    sesión anterior."""
-    try:
-        write_config_to_disk(get_default_config())
-    except Exception as e:
-        print(f"[config.tsc] No se pudo inicializar en modo libre: {e}")
+function finalizarEjecucion() {
+    isRunning = false;
+    runBtn.disabled = false;
+    runBtn.textContent = "▶ Run"; // Vuelve a su estado original
+    stdin.disabled = true;
+}
 
+runBtn.addEventListener('click', () => {
+    if (!tesseractEditor) return;
 
-@app.get("/config")
-async def read_config():
-    """Lee el config.tsc si ya existe en disco (JSON real del intérprete).
-    Si no existe, NO lo crea: solo devuelve valores de referencia en modo
-    libre para rellenar el formulario, junto con _exists=False."""
-    tsc_path = get_config_path()
+    // CASO 1: Si ya está corriendo, el botón funciona como "PARAR"
+    if (isRunning) {
+        output.innerHTML += "\n<span style='color: var(--danger)'>[Ejecución cancelada por el usuario]</span>";
+        if (ws) ws.close(); // Detiene el WS, lo que activa el finally del backend y mata el proceso
+        return;
+    }
 
-    if os.path.exists(tsc_path):
-        try:
-            with open(tsc_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            cfg = from_disk_json(data)
-            cfg["_exists"] = True
-            cfg["_path"] = tsc_path
-            return JSONResponse(cfg)
-        except Exception as e:
-            return JSONResponse(
-                {"error": f"config.tsc existe pero no se pudo leer como JSON: {e}"},
-                status_code=500,
-            )
-
-    cfg = get_default_config()
-    cfg["_exists"] = False
-    cfg["_path"] = tsc_path
-    return JSONResponse(cfg)
-
-
-@app.post("/config")
-async def write_config(payload: dict = Body(...)):
-    """Endpoint manual para inspección/pruebas puntuales. OJO: el flujo normal
-    del playground YA NO depende de este endpoint para persistir cambios —
-    cada ejecución manda su propia configuración por WebSocket, se aplica solo
-    para esa ejecución, y el entorno se resetea a modo libre justo después.
-    Así ningún usuario se queda con la configuración de otro."""
-    bc = payload.get("block_config", {}) or {}
-    for key in ("pb_start", "pb_end"):
-        v = bc.get(key)
-        if v is not None and len(str(v)) > PB_DELIMITER_MAX_LEN:
-            return JSONResponse(
-                {"error": f"'{key}' supera el límite de {PB_DELIMITER_MAX_LEN} caracteres."},
-                status_code=400,
-            )
-
-    tsc_path = write_config_to_disk(payload)
-    return JSONResponse({"status": "ok", "path": tsc_path})
-
-# Lock para evitar que dos ejecuciones simultáneas se pisen al escribir
-# config.tsc justo antes de lanzar el intérprete.
-config_write_lock = asyncio.Lock()
-
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    process = None
-    output_task = None
+    // CASO 2: Si está libre, inicia la ejecución normal
+    isRunning = true;
+    output.innerHTML = "<span style='color: var(--text-header)'>[Conectando asíncronamente con Hugging Face...]</span>\n";
+    stdin.disabled = true; 
+    stdin.value = "";
     
-    ws_id = id(websocket)
-    tmp_dir = f"/tmp/tess_{ws_id}"
-    
-    try:
-        payload = await websocket.receive_json()
-        code = payload.get("code", "")
-        syntax = payload.get("syntax", "-b")
-        target_val = payload.get("target", "interp")
-        is_debug = payload.get("debug", False)
+    runBtn.textContent = "🛑 Parar"; // Cambia el texto a Parar
+    runBtn.disabled = false;         // IMPORTANTE: Se queda habilitado para poder hacerle clic
 
-        # =====================================================================
-        # ENTORNO (config.tsc) DE ESTA EJECUCIÓN
-        # =====================================================================
-        # Cada ejecución trae su propia configuración de entorno (o modo libre
-        # si el usuario no tocó el panel de configuración). Se escribe justo
-        # antes de correr, y se resetea a modo libre en el "finally" de abajo
-        # apenas termina — así ningún usuario hereda la configuración guardada
-        # por otro.
-        env_cfg = payload.get("config") or get_default_config()
-        async with config_write_lock:
-            try:
-                write_config_to_disk(env_cfg)
-            except Exception as e:
-                print(f"[config.tsc] No se pudo aplicar la configuración de esta ejecución: {e}")
+    if (ws) ws.close();
+    ws = new WebSocket(WS_URL);
 
-        os.makedirs(tmp_dir, exist_ok=True)
-        source_file = os.path.join(tmp_dir, "main.tss")
+    ws.onopen = () => {
+        output.innerHTML += "<span style='color: var(--text-header)'>[Entorno listo. Compilando/Ejecutando Tesseract...]</span>\n\n";
+        stdin.disabled = false; 
+        stdin.focus();
+
+        const payload = {
+            code: tesseractEditor.getValue(),
+            syntax: syntaxSelect.value,
+            target: targetSelect.value,
+            debug: debugCheck.checked
+        };
         
-        with open(source_file, "w", encoding="utf-8") as f:
-            f.write(code)
+        setTimeout(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(payload));
+            }
+        }, 250);
+    };
 
-        interpreter_path = os.path.abspath("./interpreter")
-        cmd = []
-
-        # =====================================================================
-        # FASE 1: DEJAR TRABAJAR AL COMPILADOR/TRANSPILADOR (WEB Y NATIVE)
-        # =====================================================================
-        if target_val in ["web", "native"]:
-            comp_cmd = [interpreter_path, source_file, syntax, "--target", target_val]
-            if is_debug:
-                comp_cmd.append("-d")
-            
-            # Lanzamos el proceso de compilación puramente asíncrono
-            comp_process = await asyncio.create_subprocess_exec(
-                *comp_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT, 
-                cwd=tmp_dir  
-            )
-            
-            # CORRECCIÓN: Leer por fragmentos crudos (chunks) para no bloquearse
-            while True:
-                chunk = await comp_process.stdout.read(1024)
-                if not chunk:
-                    break
-                await websocket.send_json({"type": "stdout", "data": chunk.decode("utf-8", errors="replace")})
-            
-            await comp_process.wait()
-            return_code = comp_process.returncode
-            
-            if return_code != 0:
-                await websocket.send_json({"type": "exit", "data": f"\n[Compilación finalizada con código de error {return_code}]"})
-                await websocket.close()
-                return
-
-            # =================================================================
-            # FASE 1.5: BUSCAR Y PREPARAR EL ARCHIVO REAL A EJECUTAR
-            # =================================================================
-            if target_val == "web":
-                js_file = None
-                for f in os.listdir(tmp_dir):
-                    if f.endswith(".js"):
-                        js_file = os.path.join(tmp_dir, f)
-                        break
-                
-                if not js_file:
-                    await websocket.send_json({"type": "stdout", "data": "❌ Error: Compilación exitosa pero no se encontró un archivo .js en el directorio.\n"})
-                    await websocket.send_json({"type": "exit", "data": "\n[Código 1]"})
-                    await websocket.close()
-                    return
-                
-                cmd = ["node", js_file]
-            
-            elif target_val == "native":
-                native_exe = None
-                
-                cand_linux = os.path.join(tmp_dir, "output")
-                #cand_win = os.path.join(tmp_dir, "main.exe")
-                
-                if os.path.exists(cand_linux) and os.path.isfile(cand_linux):
-                    native_exe = cand_linux
-                elif os.path.exists(cand_win) and os.path.isfile(cand_win):
-                    native_exe = cand_win
-                else:
-                    archivos_ignorados = ('.tss', '.ll', '.o', '.obj', '.s', '.c', '.cpp', '.h')
-                    for f in os.listdir(tmp_dir):
-                        if not f.endswith(archivos_ignorados) and os.path.isfile(os.path.join(tmp_dir, f)):
-                            native_exe = os.path.join(tmp_dir, f)
-                            break
-                
-                if not native_exe:
-                    await websocket.send_json({"type": "stdout", "data": "❌ Error: Compilación exitosa pero no se detectó el binario final (solo archivos intermedios).\n"})
-                    await websocket.send_json({"type": "exit", "data": "\n[Código 1]"})
-                    await websocket.close()
-                    return
-                
-                st = os.stat(native_exe)
-                os.chmod(native_exe, st.st_mode | stat.S_IEXEC)
-                
-                nombre_binario = os.path.basename(native_exe)
-                cmd = ["stdbuf", "-i0", "-o0", "-e0", f"./{nombre_binario}"]
-
-        else:
-            # =================================================================
-            # MODO INTERP DIRECTO
-            # =================================================================
-            cmd = [interpreter_path, source_file, syntax, "--target", "interp"]
-            if is_debug:
-                cmd.append("-d")
-
-        # =====================================================================
-        # FASE 2: EJECUCIÓN INTERACTIVA ASÍNCRONA AL 100%
-        # =====================================================================
-        print(f"Ejecutando WS {ws_id} (Target: {target_val}): {' '.join(cmd)}")
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
         
-        # Cambiamos Popen por create_subprocess_exec para controlar el stdin/stdout sin deadlocks
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT, 
-            cwd=tmp_dir 
-        )
+        if (msg.type === 'stdout') {
+            output.textContent += msg.data;
+            output.scrollTop = output.scrollHeight;
+        } else if (msg.type === 'exit') {
+            const color = msg.data.includes("código 0") ? "var(--text-muted)" : "var(--danger)";
+            output.innerHTML += `\n<span style='color: ${color}'>${msg.data}</span>`;
+            output.scrollTop = output.scrollHeight;
+            if (ws) ws.close(); 
+        }
+    };
 
-        async def read_output():
-            try:
-                while True:
-                    # CORRECCIÓN VITAL: Leemos lo que haya al instante (hasta 1024 bytes). 
-                    # Si Tesseract imprime "Ingresa algo: ", lo agarra de golpe y no espera el \n
-                    chunk = await process.stdout.read(1024)
-                    if not chunk:
-                        break 
-                    
-                    await websocket.send_json({"type": "stdout", "data": chunk.decode("utf-8", errors="replace")})
-                
-                await process.wait()
-                return_code = process.returncode
-                await websocket.send_json({"type": "exit", "data": f"\n[Ejecución finalizada con código {return_code}]"})
-            except Exception as e:
-                print(f"Error en read_output: {e}")
-            finally:
-                try:
-                    await websocket.close()
-                except:
-                    pass
+    ws.onerror = (err) => {
+        output.innerHTML += "\n<span style='color: var(--danger)'>[Error crítico: No se pudo conectar. Verifica tu WS_URL]</span>";
+        finalizarEjecucion();
+    };
 
-        output_task = asyncio.create_task(read_output())
+    ws.onclose = () => {
+        ws = null;
+        finalizarEjecucion();
+    };
+});
 
-        # Bucle de escucha de inputs desde el navegador
-        while True:
-            data = await websocket.receive_json()
-            if data.get("type") == "stdin" and process.returncode is None:
-                # Escribimos los datos de tu input y forzamos (drain) que se inyecten de inmediato a Tesseract
-                process.stdin.write((data["data"] + "\n").encode("utf-8"))
-                await process.stdin.drain()
-
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        try:
-            await websocket.send_json({"type": "stdout", "data": f"\nError interno del servidor: {str(e)}"})
-        except: pass
-    finally:
-        if output_task and not output_task.done():
-            output_task.cancel()
-        if process and process.returncode is None:
-            try:
-                process.kill()
-            except:
-                pass
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-        # Apenas termina esta ejecución, el entorno vuelve a modo libre para
-        # que la siguiente conexión (tuya con F5, o la de cualquier otro
-        # usuario) no herede la configuración que se usó aquí.
-        try:
-            write_config_to_disk(get_default_config())
-        except Exception as e:
-            print(f"[config.tsc] No se pudo resetear a modo libre: {e}")
-        try:
-            await websocket.close()
-        except: pass
+stdin.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && ws && ws.readyState === WebSocket.OPEN) {
+        const inputValue = stdin.value;
+        output.textContent += inputValue + "\n";
+        output.scrollTop = output.scrollHeight;
+        ws.send(JSON.stringify({ type: 'stdin', data: inputValue }));
+        stdin.value = "";
+    }
+});
+    </script>
+</body>
+</html>
