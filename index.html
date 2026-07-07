@@ -623,14 +623,80 @@ if(input>10){
     {
         title: 'Bucles',
         desc: 'while / for',
-        code: `// Ejemplo: bucles
-`
+        code: `    // Ejemplo: bucles
+var x = 0;
+while(x<5){
+    x++;
+    print("imprime #(x) veces");
+
+}
+while(x<10){
+    x++;
+    if(x==8){
+        print("solo imprime #(x) y para");
+        break;
+    
+    }
+} 
+x = 0; 
+perform{
+   print("se ejecuta al menos una vez");
+}while(x!=0)
+    // Itera sobre Rango
+for(var i in 0..5){
+    print("valor: #(i)");
+}
+    // Itera  sobre Arrays y Colleciones
+for(var j in ["a","b","c","d"]){
+    print("elemento: #(j)");
+}
+var dt = {"clave1": 1, "clave2": "valor2", "clave3": 3.0};
+for(var x,z in dt.keys; dt){
+    print("#(x): #(z)");
+}`
     },
     {
         title: 'Funciones',
         desc: 'function ... return',
-        code: `// Ejemplo: funciones
-`
+        code: `    // Ejemplo: funciones
+//parametros dinamicos
+function sumar(a,b){
+   return a+b;
+}
+var x = sumar(2,2);
+print(x);
+function fibonacci(int n){
+    int a = 0; 
+    int b = 1;
+    int siguiente;
+    array arr;
+    for (var i in 1..n){
+      arr.push(a);
+      siguiente = a + b;
+      a = b;
+      b = siguiente;
+      
+    }
+    return arr;
+}
+x = fibonacci(5);
+print(x)
+
+
+function ord_burbuja(arreglo){
+    var n = arreglo.length;
+    for(var i = 0 in 0..<n){
+        for(var j = 0 in j..<n-i){ 
+         if(arreglo[j]>arreglo[j+1]){
+                arreglo[j]=arreglo[j+1];
+                arreglo[j+1]=arreglo[j];
+            }
+        }
+    }
+    return arreglo;
+}
+var elementos = [8, 3, 1, 19, 14];
+elementos = ord_burbuja(elementos);`
     },
     {
         title: 'Arrays y colecciones',
