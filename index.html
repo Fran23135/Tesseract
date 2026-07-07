@@ -527,7 +527,7 @@ window.tesseractExamples = [
     {
         title: 'Demo completo',
         desc: 'Variables, tipado, condicionales y bucles',
-        code: `// Demo de Tesseract con soporte nativo de tu extensión
+        code: `// Demo de Tesseract
 var nombre;
 const int limite = 18;
 var edad;
@@ -544,14 +544,14 @@ print("Hola " . nombre . ", tienes " . edad . " años.");
 print("Interpolación: hola soy #(nombre), tengo #(edad) años.");
 
 if (edad >= limite) {
-    print("Acceso concedido de forma nativa.\\n");
+    print("Acceso concedido.\\n");
 } else {
     print("Eres menor de edad.");
 }
 
 print("\\nProbando scroll del output:");
 var i = 0;
-while(i < 30){
+while(i < 10){
     print("Línea de salida número: " . i);
     i = i + 1;
 }`
@@ -560,12 +560,64 @@ while(i < 30){
         title: 'Variables y tipado',
         desc: 'Declaración estática vs dinámica',
         code: `// Ejemplo: variables y tipado
-`
+        // Tipos normales
+var valor = 1; //dinamico
+string str = "Hola, mundo!";
+int numero = 42;
+float decimal = 3.14;
+bool is_bool = true;
+
+    // Tipos complejos
+array arr = [1, 2, 3, 4];
+tuple tupla = (4, "texto", 0.5);
+dict keys = {"clave1": 1, "clave2": "valor2", "clave3": 3.0};
+range val = 1..10;
+
+    // Constantes
+const constant = "Hola";
+const int num = 25; //misma forma para cada tipo
+print("dynamic: #(valor)");
+print("string: #(str)");
+print("integer: #(numero)");
+print("float: #(decimal)");
+print("boolean: #(is_bool)")
+
+print("array: #(arr)");
+print("tuple: #(tupla)");
+print("dict: #(keys)");
+print("range: #(val)");
+
+valor = arr;
+print("dynamic: #(valor)");
+print("const: #(constant)");
+print("numConst: #(num)");`
     },
     {
         title: 'Condicionales',
         desc: 'if / else',
         code: `// Ejemplo: condicionales
+var condition = 2==2;
+if(condition){
+    print("Es verdadero");
+} 
+var x = 5;
+var input;
+read(input,int,"Entrada: "); //read transforma int
+if(x==input){
+    print("El input es igual que x");
+}else{
+    print("El input no es igual");
+}
+
+if(input>10){
+   print("input es mayor que 10");
+}else if(input<0){
+    print("El input es negativo");
+}else if(input >=0 && input<4){
+    print("El input es mayor o igual que 0 y menor que 4");
+}else{
+    print("ninguno coincide");
+}
 `
     },
     {
@@ -620,7 +672,7 @@ require(['vs/editor/editor.main'], function() {
         keywordsControl: [
             'function', 'if', 'else', 'return', 'while', 'for', 
             'perform', 'switch', 'break', 'continue', 'library', 
-            'from', 'use', 'as', 'al'
+            'from', 'use', 'as', 'al','case'
         ],
         storageTypes: ['int', 'string', 'bool', 'float', 'var', 'const', 'void','range','array','tuple','dict'],
         supportFunctions: ['print', 'read'],
