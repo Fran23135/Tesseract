@@ -658,7 +658,7 @@ for(var x,z in dt.keys; dt){
     {
         title: 'Funciones',
         desc: 'function ... return',
-        code: `    // Ejemplo: funciones
+        code: `       // Ejemplo: funciones
 //parametros dinamicos
 function sumar(a,b){
    return a+b;
@@ -685,18 +685,21 @@ print(x)
 
 function ord_burbuja(arreglo){
     var n = arreglo.length;
-    for(var i = 0 in 0..<n){
-        for(var j = 0 in j..<n-i){ 
+    var temp;
+    for(var i = 0 in i..n-1){
+        for(var j = 0 in j..<n-1-i){ 
          if(arreglo[j]>arreglo[j+1]){
-                arreglo[j]=arreglo[j+1];
-                arreglo[j+1]=arreglo[j];
+                temp = arreglo[j];
+                arreglo[j] = arreglo[j+1];
+                arreglo[j+1] = temp;
             }
         }
     }
     return arreglo;
 }
-var elementos = [8, 3, 1, 19, 14];
-elementos = ord_burbuja(elementos);`
+
+var arr = [5, 2, 3, 1, 6, 4];
+print(ord_burbuja(arr));`
     },
     {
         title: 'Arrays y colecciones',
