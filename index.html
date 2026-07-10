@@ -130,7 +130,7 @@
         #output {
             flex: 1; color: var(--text-terminal);
             overflow-y: auto; white-space: pre-wrap; line-height: 1.5;
-            padding-right: 5px;
+            padding-right: 5px; padding-bottom: 12px;
         }
 
         .input-line {
@@ -745,7 +745,6 @@ print(arr5); //metodo de array
 for(var i in arr5){
     print("elemento: #(i)");  //no itera profundamente 
 }
-print(true.type());
 for(var z in arr5.flatten){
     print("apalando: #(z)");  //itera profundamente por el .flatten
 }`
@@ -1209,6 +1208,16 @@ const debugCheck = document.getElementById('debugCheck');
 let ws = null;
 let isRunning = false; // Controla si hay un proceso activo
 
+// Hace scroll al fondo del output DESPUÉS de que el navegador repinte el
+// nuevo contenido (con requestAnimationFrame). Si se hace scroll en el mismo
+// tick en que se agrega el texto, a veces el layout todavía no terminó de
+// calcular el nuevo alto y la última línea queda cortada a la mitad.
+function scrollOutputToBottom() {
+    requestAnimationFrame(() => {
+        output.scrollTop = output.scrollHeight;
+    });
+}
+
 function finalizarEjecucion() {
     isRunning = false;
     runBtn.disabled = false;
@@ -1266,11 +1275,11 @@ runBtn.addEventListener('click', () => {
         
         if (msg.type === 'stdout') {
             output.textContent += msg.data;
-            output.scrollTop = output.scrollHeight;
+            scrollOutputToBottom();
         } else if (msg.type === 'exit') {
             const color = msg.data.includes("código 0") ? "var(--text-muted)" : "var(--danger)";
             output.innerHTML += `\n<span style='color: ${color}'>${msg.data}</span>`;
-            output.scrollTop = output.scrollHeight;
+            scrollOutputToBottom();
             if (ws) ws.close(); 
         }
     };
@@ -1290,7 +1299,7 @@ stdin.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && ws && ws.readyState === WebSocket.OPEN) {
         const inputValue = stdin.value;
         output.textContent += inputValue + "\n";
-        output.scrollTop = output.scrollHeight;
+        scrollOutputToBottom();
         ws.send(JSON.stringify({ type: 'stdin', data: inputValue }));
         stdin.value = "";
     }
