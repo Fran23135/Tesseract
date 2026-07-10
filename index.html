@@ -704,8 +704,51 @@ print(ord_burbuja(arr));`
     {
         title: 'Arrays y colecciones',
         desc: 'array, tuple, dict',
-        code: `// Ejemplo: arrays y colecciones
-`
+        code: `    // Ejemplo: arrays y colecciones
+var arr = [2,6,1,4,3];
+var keys = {"val1":"a","val2":"b","val3":"c"};
+var tupla = ("z",25,3.14);
+print(arr);
+print(keys);
+print(tupla);
+
+//manejo
+arr.push("a");
+arr.sort().mut; // .mut muta el el array original
+print(arr);
+
+keys.values().mut; // .mut muta el diccionario original
+print(keys);
+
+tupla.type().mut; //tupla no es mutable, no se puede mutar
+print(tupla);
+
+var arr2 = [1..10];
+print(arr2);
+print(arr2[0..4]); //slice
+
+var arr3 = [0..0.5, arr2];
+print(arr3[6:0..<10]);  //acceso profundo equivalente a arr3[6][0..<10]
+
+var arr4 = []
+for(var i in keys){
+    arr4.push(i);
+}
+print(arr4); //keys muto a array con keys.values().mut en linea:15 y se le inserto sus values
+
+
+var claves = {"val1":"a","val2":"b","val3":"c"};
+var tupla2 = ("z",25,3.14);
+var arr5 = [arr, claves, tupla2];
+print(arr5); //metodo de array
+
+for(var i in arr5){
+    print("elemento: #(i)");  //no itera profundamente 
+}
+print(true.type());
+for(var z in arr5.flatten){
+    print("apalando: #(z)");  //itera profundamente por el .flatten
+}`
     }
 ];
 
