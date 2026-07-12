@@ -726,7 +726,7 @@ print(arr);
 keys.values().mut; // .mut muta el diccionario original
 print(keys);
 
-tupla.type().mut; //tupla no es mutable, no se puede mutar
+tupla.type().mut; 
 print(tupla);
 
 var arr2 = [1..10];
@@ -746,7 +746,7 @@ print(arr4); //keys muto a array con keys.values().mut en linea:15 y se le inser
 var claves = {"val1":"a","val2":"b","val3":"c"};
 var tupla2 = ("z",25,3.14);
 var arr5 = [arr, claves, tupla2];
-print(arr5); //metodo de array
+print(arr5);
 
 for(var i in arr5){
     print("elemento: #(i)");  //no itera profundamente 
