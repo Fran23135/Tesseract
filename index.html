@@ -272,6 +272,95 @@
         }
         .secondary-btn:hover { color: var(--text-main); border-color: var(--text-muted); }
 
+        /* --- MARCA VISUAL DE ACTIVADO/DESACTIVADO (checkboxes del modal de entorno) --- */
+        .switch-row { justify-content: space-between; }
+        .switch-row > span:first-of-type,
+        .switch-row .switch-label { flex: 1; }
+        .switch-badge {
+            flex-shrink: 0; font-size: 0.68rem; font-weight: 700;
+            padding: 2px 9px; border-radius: 20px; letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .switch-badge.on { color: #4caf50; background-color: rgba(76,175,80,0.14); }
+        .switch-badge.off { color: var(--danger); background-color: rgba(209,109,109,0.14); }
+
+        /* Control deshabilitado (allow-cli-override no aplica en este playground) */
+        .switch-row.is-disabled { cursor: not-allowed; opacity: 0.55; }
+        .switch-row.is-disabled input { cursor: not-allowed; }
+        .switch-row-note {
+            display: block; font-size: 0.72rem; color: var(--text-muted);
+            margin-top: 4px; font-style: italic;
+        }
+
+        /* Selects: resaltar cuando el valor difiere del valor por defecto.
+           Dentro de la lista desplegable, SOLO la opción seleccionada se
+           colorea; el resto de opciones quedan en su color normal. */
+        .config-field select.is-changed {
+            color: var(--accent); font-weight: 600; border-color: var(--accent);
+        }
+        .config-field select.is-changed option {
+            color: var(--text-main); font-weight: normal;
+        }
+        .config-field select.is-changed option:checked {
+            color: var(--accent); font-weight: 600;
+        }
+
+        /* --- BOTÓN DE AYUDA (modal de entorno) --- */
+        .modal-help-btn {
+            background: transparent; border: 1px solid var(--border-color);
+            color: var(--text-muted); width: 24px; height: 24px; border-radius: 50%;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer; margin-left: 8px;
+            display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .modal-help-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .modal-header-title { display: flex; align-items: center; flex-wrap: wrap; }
+
+        /* --- MODAL DE AYUDA --- */
+        .help-body { padding: 18px 20px; overflow-y: auto; font-size: 0.85rem; line-height: 1.55; }
+        .help-body h3 { color: var(--text-header); font-size: 0.92rem; margin: 16px 0 6px; }
+        .help-body h3:first-child { margin-top: 0; }
+        .help-body p { margin-bottom: 6px; color: var(--text-main); }
+        .help-body ul { margin: 4px 0 10px 18px; }
+        .help-body li { margin-bottom: 5px; }
+        .help-body code {
+            font-family: 'Fira Code', 'Consolas', monospace; font-size: 0.8rem;
+            background-color: var(--bg-controls); padding: 1px 5px; border-radius: 4px;
+        }
+        .help-lang-toggle { display: flex; gap: 4px; margin-left: auto; }
+        .help-lang-btn {
+            background-color: var(--bg-controls); color: var(--text-muted);
+            border: 1px solid var(--border-color); padding: 4px 10px;
+            border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-weight: 700;
+        }
+        .help-lang-btn.active { background-color: var(--accent); color: white; border-color: var(--accent); }
+
+        /* --- TOASTS (notificaciones emergentes arriba de la pantalla) --- */
+        .toast-container {
+            position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+            z-index: 3000; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; pointer-events: none; width: 100%; max-width: 420px; padding: 0 12px;
+        }
+        .toast {
+            position: relative; width: 100%; background-color: var(--bg-panel);
+            color: var(--text-main); border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent); box-shadow: var(--shadow);
+            border-radius: 10px; padding: 12px 16px 14px; font-size: 0.82rem;
+            opacity: 0; transform: translateY(-14px); pointer-events: auto;
+            transition: opacity 0.25s ease, transform 0.25s ease; overflow: hidden;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.ok { border-left-color: #4caf50; }
+        .toast.error { border-left-color: var(--danger); }
+        .toast-title { font-weight: 700; margin-bottom: 3px; display: block; }
+        .toast-desc { color: var(--text-muted); font-size: 0.78rem; }
+        .toast-bar {
+            position: absolute; left: 0; bottom: 0; height: 3px; background-color: var(--accent);
+            width: 100%; transform-origin: left; animation: toast-shrink linear forwards;
+        }
+        .toast.ok .toast-bar { background-color: #4caf50; }
+        .toast.error .toast-bar { background-color: var(--danger); }
+        @keyframes toast-shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
         /* --- RESPONSIVE / MÓVILES --- */
         @media (max-width: 900px) {
             .examples-pane { flex: 0 0 170px; max-width: 170px; }
@@ -301,6 +390,8 @@
 
             .modal-box { max-height: 95vh; }
             .modal-header h2 { font-size: 0.95rem; }
+            .toast-container { top: 10px; max-width: none; }
+            .help-lang-toggle { margin-left: 0; margin-top: 8px; width: 100%; }
         }
     </style>
 
@@ -311,6 +402,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+
+    <!-- Notificaciones emergentes (toasts) -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <header>
         <h1>Tesseract Playground</h1>
@@ -381,7 +475,10 @@
     <div class="modal-overlay" id="configOverlay">
         <div class="modal-box">
             <div class="modal-header">
-                <h2>Configuración de entorno <span class="modal-subtitle">config.tsc</span></h2>
+                <span class="modal-header-title">
+                    <h2>Configuración de entorno <span class="modal-subtitle">config.tsc</span></h2>
+                    <button class="modal-help-btn" id="configHelpBtn" title="¿Qué significa cada opción?">?</button>
+                </span>
                 <button class="modal-close" id="configClose">✕</button>
             </div>
 
@@ -396,7 +493,7 @@
                     <div class="config-grid">
                         <label class="config-field">
                             <span>Tipado — variables</span>
-                            <select id="cfgTypingVariables">
+                            <select id="cfgTypingVariables" data-default="free">
                                 <option value="only-static">only-static</option>
                                 <option value="only-dynamic">only-dynamic</option>
                                 <option value="free">free</option>
@@ -404,7 +501,7 @@
                         </label>
                         <label class="config-field">
                             <span>Tipado — funciones</span>
-                            <select id="cfgTypingFunctions">
+                            <select id="cfgTypingFunctions" data-default="free">
                                 <option value="only-static">only-static</option>
                                 <option value="only-dynamic">only-dynamic</option>
                                 <option value="free">free</option>
@@ -412,7 +509,7 @@
                         </label>
                         <label class="config-field">
                             <span>Tipado — parámetros</span>
-                            <select id="cfgTypingParameters">
+                            <select id="cfgTypingParameters" data-default="free">
                                 <option value="only-static">only-static</option>
                                 <option value="only-dynamic">only-dynamic</option>
                                 <option value="free">free</option>
@@ -420,7 +517,7 @@
                         </label>
                         <label class="config-field">
                             <span>only-block</span>
-                            <select id="cfgOnlyBlock">
+                            <select id="cfgOnlyBlock" data-default="null">
                                 <option value="null">Sin restricción</option>
                                 <option value="brace">brace</option>
                                 <option value="indent">indent</option>
@@ -428,7 +525,7 @@
                         </label>
                         <label class="config-field">
                             <span>execution_mode</span>
-                            <select id="cfgExecutionMode">
+                            <select id="cfgExecutionMode" data-default="free">
                                 <option value="free">free</option>
                                 <option value="compiled">compiled</option>
                                 <option value="interpreter">interpreter</option>
@@ -475,7 +572,7 @@
                         </label>
                         <label class="config-field">
                             <span>target</span>
-                            <select id="cfgTransformTarget">
+                            <select id="cfgTransformTarget" data-default="brace">
                                 <option value="brace">brace</option>
                                 <option value="indent">indent</option>
                             </select>
@@ -484,19 +581,38 @@
                 </section>
 
                 <section class="config-section">
-                    <label class="switch-row">
-                        <input type="checkbox" id="cfgAllowCliOverride">
+                    <label class="switch-row is-disabled no-badge">
+                        <input type="checkbox" id="cfgAllowCliOverride" disabled>
                         <span>allow-cli-override (los flags de CLI pueden sobreescribir esta config)</span>
                     </label>
+                    <span class="switch-row-note">No aplica en este playground: no hay línea de comandos desde la cual sobrescribir la configuración, así que esta opción queda deshabilitada.</span>
                 </section>
 
-                <div class="config-status" id="configStatus"></div>
             </div>
 
             <div class="modal-footer">
                 <button class="secondary-btn" id="configReset">Restaurar modo libre</button>
                 <button class="run-btn" id="configSave">💾 Guardar configuración</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL: AYUDA DE CONFIGURACIÓN DE ENTORNO                          -->
+    <!-- ================================================================= -->
+    <div class="modal-overlay" id="helpOverlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-header-title">
+                    <h2 id="helpTitle">¿Qué significa cada opción?</h2>
+                </span>
+                <span class="help-lang-toggle">
+                    <button class="help-lang-btn active" id="helpLangEs" type="button">ES</button>
+                    <button class="help-lang-btn" id="helpLangEn" type="button">EN</button>
+                </span>
+                <button class="modal-close" id="helpClose">✕</button>
+            </div>
+            <div class="help-body" id="helpBody"></div>
         </div>
     </div>
 
@@ -985,7 +1101,14 @@ require(['vs/editor/editor.main'], function() {
         scrollBeyondLastLine: false,
         renderLineHighlight: 'all',
         bracketPairColorization: { enabled: true },
-        guides: { bracketPairs: true }
+        guides: { bracketPairs: true },
+        // Con "auto" (por defecto), Monaco intenta detectar lectores de pantalla
+        // y en muchos teclados virtuales de móvil eso hace que use un modo de
+        // entrada que retiene los caracteres tecleados hasta que llega un
+        // espacio/enter (se ve "entrecortado" mientras escribes). Forzarlo a
+        // "off" hace que el texto se muestre carácter por carácter con
+        // normalidad en móviles.
+        accessibilitySupport: 'off'
     });
 });
 
@@ -1078,7 +1201,15 @@ window.tesseractEnvConfig = null; // null = modo libre (default)
     const closeBtn = document.getElementById('configClose');
     const saveBtn = document.getElementById('configSave');
     const resetBtn = document.getElementById('configReset');
-    const statusEl = document.getElementById('configStatus');
+    const configBody = document.getElementById('configBody');
+    const toastContainer = document.getElementById('toastContainer');
+
+    const helpBtn = document.getElementById('configHelpBtn');
+    const helpOverlay = document.getElementById('helpOverlay');
+    const helpClose = document.getElementById('helpClose');
+    const helpBody = document.getElementById('helpBody');
+    const helpLangEs = document.getElementById('helpLangEs');
+    const helpLangEn = document.getElementById('helpLangEn');
 
     const fields = {
         strictEnabled: document.getElementById('cfgStrictEnabled'),
@@ -1110,9 +1241,49 @@ window.tesseractEnvConfig = null; // null = modo libre (default)
             },
             block_config: { enabled: false, pb_start: 'begin', pb_end: 'end' },
             transform_code: { enabled: false, mutable: false, target: 'brace' },
-            allow_cli_override: true
+            allow_cli_override: false // no aplica en este playground (sin CLI)
         };
     }
+
+    // --- Marca visual (verde = activado / rojo = desactivado) junto a cada
+    // interruptor del modal. Se recalcula cada vez que algo cambia. ---
+    function refreshSwitchBadges() {
+        configBody.querySelectorAll('.switch-row').forEach((row) => {
+            if (row.classList.contains('no-badge')) return; // allow-cli-override: no aplica
+            const input = row.querySelector('input[type="checkbox"]');
+            if (!input) return;
+            let badge = row.querySelector('.switch-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'switch-badge';
+                row.appendChild(badge);
+            }
+            if (input.checked) {
+                badge.textContent = 'Activado';
+                badge.className = 'switch-badge on';
+            } else {
+                badge.textContent = 'Desactivado';
+                badge.className = 'switch-badge off';
+            }
+        });
+    }
+
+    // --- Colorea los <select> cuyo valor ya no es el de fábrica, para
+    // marcar de un vistazo qué opciones fueron modificadas. ---
+    function refreshSelectHighlights() {
+        configBody.querySelectorAll('select[data-default]').forEach((sel) => {
+            sel.classList.toggle('is-changed', sel.value !== sel.dataset.default);
+        });
+    }
+
+    function refreshFormIndicators() {
+        refreshSwitchBadges();
+        refreshSelectHighlights();
+    }
+
+    // Delegación: cualquier cambio dentro del modal (checkbox o select)
+    // recalcula ambas marcas visuales automáticamente.
+    if (configBody) configBody.addEventListener('change', refreshFormIndicators);
 
     function fillForm(cfg) {
         const sm = cfg.strict_mode || {};
@@ -1136,7 +1307,11 @@ window.tesseractEnvConfig = null; // null = modo libre (default)
         fields.transformMutable.checked = !!tc.mutable;
         fields.transformTarget.value = tc.target || 'brace';
 
-        fields.allowCliOverride.checked = cfg.allow_cli_override !== false;
+        // Deshabilitado: no hay CLI en este playground, así que siempre queda
+        // desactivado sin importar lo que traiga la config guardada.
+        fields.allowCliOverride.checked = false;
+
+        refreshFormIndicators();
     }
 
     function readForm() {
@@ -1162,13 +1337,27 @@ window.tesseractEnvConfig = null; // null = modo libre (default)
                 mutable: fields.transformMutable.checked,
                 target: fields.transformTarget.value,
             },
-            allow_cli_override: fields.allowCliOverride.checked,
+            allow_cli_override: false, // el control está deshabilitado: no aplica sin CLI
         };
     }
 
-    function setStatus(msg, type) {
-        statusEl.textContent = msg || '';
-        statusEl.className = 'config-status' + (type ? ' ' + type : '');
+    // --- Notificaciones emergentes arriba de la pantalla, con temporizador ---
+    function showToast(title, desc, type, duration) {
+        duration = duration || 4500;
+        const toast = document.createElement('div');
+        toast.className = 'toast' + (type ? ' ' + type : '');
+        toast.innerHTML =
+            '<span class="toast-title">' + title + '</span>' +
+            (desc ? '<span class="toast-desc">' + desc + '</span>' : '') +
+            '<span class="toast-bar" style="animation-duration:' + duration + 'ms"></span>';
+        toastContainer.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        const hide = () => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        };
+        const timer = setTimeout(hide, duration);
+        toast.addEventListener('click', () => { clearTimeout(timer); hide(); });
     }
 
     function openModal() {
@@ -1176,20 +1365,23 @@ window.tesseractEnvConfig = null; // null = modo libre (default)
         // Se rellena con lo que ya tengas elegido en ESTA pestaña, o modo libre
         // si todavía no has tocado nada (nunca se consulta al servidor).
         fillForm(window.tesseractEnvConfig || defaultConfig());
-        setStatus('', '');
     }
 
     function saveConfig() {
         const cfg = readForm();
 
         if (cfg.block_config.pb_start.length > PB_MAX_LEN || cfg.block_config.pb_end.length > PB_MAX_LEN) {
-            setStatus(`Los delimitadores no pueden superar ${PB_MAX_LEN} caracteres.`, 'error');
+            showToast('No se pudo guardar', `Los delimitadores no pueden superar ${PB_MAX_LEN} caracteres.`, 'error');
             return;
         }
 
         // Solo queda en memoria de esta pestaña, no se manda al servidor todavía.
         window.tesseractEnvConfig = cfg;
-        setStatus('✔ Listo. Se aplicará en tu próxima ejecución (solo para ti — no se guarda para otros usuarios ni sobrevive a un F5).', 'ok');
+        showToast(
+            '✔ Configuración guardada',
+            'Se aplicará en tu próxima ejecución. Es solo para ti: no se guarda para otros usuarios ni sobrevive a recargar la página (F5).',
+            'ok'
+        );
     }
 
     if (configBtn) configBtn.addEventListener('click', openModal);
@@ -1199,8 +1391,88 @@ window.tesseractEnvConfig = null; // null = modo libre (default)
     if (resetBtn) resetBtn.addEventListener('click', () => {
         window.tesseractEnvConfig = null;
         fillForm(defaultConfig());
-        setStatus('Restaurado a modo libre para tu próxima ejecución.', '');
+        showToast('Restaurado', 'Modo libre restaurado para tu próxima ejecución.', 'ok');
     });
+
+    // ================================================================
+    // MODAL DE AYUDA (botón "?" junto al título) — explica cada opción
+    // de config.tsc. Por defecto en español, con toggle a inglés.
+    // ================================================================
+    const helpTexts = {
+        es: `
+            <h3>strict-mode</h3>
+            <p><strong>Activado / desactivado</strong>: enciende o apaga todas las reglas de este bloque. Si está desactivado, el sistema ignora tipado y estilo y permite cualquier combinación.</p>
+            <ul>
+                <li><strong>Tipado (variables / funciones / parámetros)</strong>: se define por separado para cada uno.
+                    <ul>
+                        <li><code>only-static</code>: exige tipo explícito (int, string, array...). No se permite declarar sin tipo.</li>
+                        <li><code>only-dynamic</code>: prohíbe anotaciones de tipo; todo debe declararse con <code>var</code> o por inferencia.</li>
+                        <li><code>free</code>: permite mezclar tipado estático y dinámico.</li>
+                    </ul>
+                </li>
+                <li><strong>only-block</strong>: fuerza un único estilo de bloque en todo el proyecto: <code>brace</code> (llaves <code>{}</code>) o <code>indent</code> (dos puntos + sangría). "Sin restricción" deja que cada archivo elija su estilo.</li>
+                <li><strong>entry_point-strict</strong>: si está activo, exige que exista exactamente una función marcada <code>-&gt; main</code>; si no aparece, se genera un error. Si está desactivado, <code>main</code> es opcional y el código se ejecuta de arriba hacia abajo.</li>
+                <li><strong>execution_mode</strong>: le indica al intérprete/compilador cómo preparar el entorno base (<code>compiled</code>, <code>interpreter</code>, <code>web</code>, <code>free</code>). Es solo una optimización de arranque: nunca limita ni quita funcionalidades del lenguaje. Tesseract mantiene su propio manejo de funciones asíncronas y sus librerías nativas funcionan igual de completas en cualquier entorno.</li>
+            </ul>
+
+            <h3>block-config</h3>
+            <p>Permite reemplazar los delimitadores de bloque por símbolos personalizados en vez de los habituales. <strong>Activado / desactivado</strong> enciende o apaga esta sustitución. <code>pb_start</code> y <code>pb_end</code> son las palabras o símbolos de apertura y cierre (máximo 8 caracteres).</p>
+
+            <h3>transform-code</h3>
+            <p><strong>Activado / desactivado</strong> enciende o apaga la transformación automática de estilo de bloques (indentación ↔ llaves).</p>
+            <ul>
+                <li><strong>mutable</strong>: si está activo, el archivo original en disco se sobrescribe con el nuevo estilo. Si está desactivado, se genera una copia interna: el original queda intacto y el sistema trabaja sobre la copia transformada.</li>
+                <li><strong>target</strong>: el estilo final al que se transforma el código: <code>brace</code> o <code>indent</code>.</li>
+            </ul>
+
+            <h3>allow-cli-override</h3>
+            <p>En la herramienta de línea de comandos, esta opción decide si las banderas de terminal (como <code>--typing=free</code>) pueden sobrescribir temporalmente lo definido en el <code>.tsc</code>. Activado es útil para pruebas rápidas locales; desactivado garantiza que la configuración estricta se mantenga inquebrantable (ideal en producción). <strong>Este playground no tiene línea de comandos</strong>, así que la opción no aplica y aparece deshabilitada.</p>
+        `,
+        en: `
+            <h3>strict-mode</h3>
+            <p><strong>Enabled / disabled</strong>: turns all rules in this block on or off. When disabled, typing and style are unrestricted — any combination is allowed.</p>
+            <ul>
+                <li><strong>Typing (variables / functions / parameters)</strong>: set independently for each one.
+                    <ul>
+                        <li><code>only-static</code>: requires an explicit type (int, string, array...). Untyped declarations are rejected.</li>
+                        <li><code>only-dynamic</code>: forbids type annotations; everything must use <code>var</code> or inference.</li>
+                        <li><code>free</code>: allows mixing static and dynamic typing.</li>
+                    </ul>
+                </li>
+                <li><strong>only-block</strong>: forces a single block style across the whole project: <code>brace</code> (<code>{}</code>) or <code>indent</code> (colon + indentation). "No restriction" lets each file choose its own style.</li>
+                <li><strong>entry_point-strict</strong>: when enabled, requires exactly one function marked <code>-&gt; main</code>; otherwise an error is raised. When disabled, <code>main</code> is optional and code runs top-to-bottom.</li>
+                <li><strong>execution_mode</strong>: tells the interpreter/compiler how to prepare the base environment (<code>compiled</code>, <code>interpreter</code>, <code>web</code>, <code>free</code>). It's only a startup optimization hint — it never limits or removes language features. Tesseract keeps its own async handling and native libraries fully functional in any environment.</li>
+            </ul>
+
+            <h3>block-config</h3>
+            <p>Lets you replace block delimiters with custom symbols instead of the usual ones. <strong>Enabled / disabled</strong> turns this substitution on or off. <code>pb_start</code> and <code>pb_end</code> are the opening/closing words or symbols (max 8 characters).</p>
+
+            <h3>transform-code</h3>
+            <p><strong>Enabled / disabled</strong> turns automatic block-style transformation on or off (indentation ↔ braces).</p>
+            <ul>
+                <li><strong>mutable</strong>: when on, the original file on disk gets overwritten with the new style. When off, an internal copy is created instead — the original stays untouched and the system works on the transformed copy.</li>
+                <li><strong>target</strong>: the canonical style the code gets transformed to: <code>brace</code> or <code>indent</code>.</li>
+            </ul>
+
+            <h3>allow-cli-override</h3>
+            <p>In the command-line tool, this decides whether terminal flags (like <code>--typing=free</code>) can temporarily override what's set in the <code>.tsc</code> file. Enabled is handy for quick local testing; disabled guarantees the strict configuration stays unbreakable (ideal for production). <strong>This playground has no command line</strong>, so the option doesn't apply here and appears disabled.</p>
+        `
+    };
+
+    function setHelpLang(lang) {
+        helpBody.innerHTML = helpTexts[lang] || helpTexts.es;
+        if (helpLangEs) helpLangEs.classList.toggle('active', lang === 'es');
+        if (helpLangEn) helpLangEn.classList.toggle('active', lang === 'en');
+    }
+
+    if (helpBtn) helpBtn.addEventListener('click', () => {
+        helpOverlay.classList.add('open');
+        setHelpLang('es'); // por defecto español cada vez que se abre
+    });
+    if (helpClose) helpClose.addEventListener('click', () => helpOverlay.classList.remove('open'));
+    if (helpOverlay) helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.remove('open'); });
+    if (helpLangEs) helpLangEs.addEventListener('click', () => setHelpLang('es'));
+    if (helpLangEn) helpLangEn.addEventListener('click', () => setHelpLang('en'));
 })();
 
 // === LÓGICA DE WEBSOCKETS ===
