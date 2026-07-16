@@ -907,7 +907,7 @@ require(['vs/editor/editor.main'], function() {
             'perform', 'switch', 'break', 'continue', 'library', 
             'from', 'use', 'as', 'al','case'
         ],
-        storageTypes: ['int', 'string', 'bool', 'float', 'var', 'const', 'void','range','array','tuple','dict'],
+        storageTypes: ['int', 'string', 'bool', 'float', 'var', 'const', 'void','range','array','tuple','dict','null'],
         supportFunctions: ['print', 'read'],
 
         tokenizer: {
@@ -921,7 +921,7 @@ require(['vs/editor/editor.main'], function() {
                 [/'/, { token: 'string.quoted.simple', next: '@stringSimple' }],
 
                 // 3. CAPTURA DE IMPORTS (library_imports)
-                [/\b(library|from)\b/, { token: 'keyword.control.import', next: '@importLine' }],
+                [/\b(library|from|al|as)\b/, { token: 'keyword.control.import', next: '@importLine' }],
 
                 // 4. LLAMADAS A FUNCIONES (Debe ir obligatoriamente ANTES de los identificadores)
                 [/\b[a-zA-Z_]\w*(?=\s*\()/, 'entity.name.function'],
